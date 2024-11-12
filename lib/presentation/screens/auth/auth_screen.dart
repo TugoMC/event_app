@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../dashboard/main_screen.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 
@@ -45,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => MainScreen()),
       );
     } on FirebaseAuthException catch (e) {
       String message = 'Une erreur est survenue';
@@ -87,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Rediriger vers la HomeScreen après une connexion réussie
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
       }
     } catch (e) {
@@ -429,26 +430,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(height: 24),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 39),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _SocialButton(
-                                onPressed: _signInWithGoogle,
-                                icon: 'assets/logos/google.png',
-                                isGoogle: true,
-                              ),
-                              const SizedBox(width: 31),
-                              _SocialButton(
-                                onPressed: () {},
-                                icon: 'assets/logos/apple.png',
-                                isGoogle: false,
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),

@@ -86,6 +86,6 @@ class _EntryPointState extends State<EntryPoint> {
 
   @override
   Widget build(BuildContext context) {
-    return _isFirstTime ? const OnboardingScreen() : const HomeScreen();
+    return _isFirstTime ? const OnboardingScreen() : HomeScreen();
   }
 }

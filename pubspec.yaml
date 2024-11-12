@@ -19,6 +19,8 @@ dependencies:
   firebase_auth_web: ^5.13.3
   google_sign_in: ^6.2.2
   shared_preferences: ^2.0.16
+  cloud_firestore: ^5.4.5
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
