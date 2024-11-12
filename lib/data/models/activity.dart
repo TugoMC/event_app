@@ -1,13 +1,25 @@
+// lib/data/models/activity.dart
 import 'package:flutter/material.dart';
 
 class Activity {
-  final String type; // Type d'activité (par exemple, restaurant, piscine, etc.)
-  final IconData icon; // Icône associée à l'activité
+  final String type;
+  final IconData icon;
 
   Activity({
     required this.type,
     required this.icon,
   });
+
+  // Ajout des méthodes de sérialisation
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        'icon': icon.codePoint,
+      };
+
+  factory Activity.fromJson(Map<String, dynamic> json) => Activity(
+        type: json['type'],
+        icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+      );
 }
 
 // Liste des activités avec icônes associées
@@ -23,6 +35,3 @@ List<Activity> activities = [
   Activity(type: "Terrain de sport", icon: Icons.sports_soccer),
   Activity(type: "Spa", icon: Icons.spa),
 ];
-
-
-// ces activités seront affichées dans un dropdown menu lors de la création d'un event space
