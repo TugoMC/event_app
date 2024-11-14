@@ -1,4 +1,5 @@
 import 'package:event_app/presentation/screens/communes/appbar/appbar.dart';
+import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:event_app/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,6 +24,8 @@ class CommuneDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = 52.0 + kToolbarHeight;
+
     return Scaffold(
       appBar: CustomAppBar(
         communeName: communeName,
@@ -128,19 +131,35 @@ class CommuneDetailsScreen extends StatelessWidget {
               );
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: eventSpaces.length,
-              itemBuilder: (context, index) {
-                final space = eventSpaces[index];
-                return LocationCard(
-                  title: space.name,
-                  subtitle: _formatActivities(space.activities),
-                  rating: space.getAverageRating(),
-                  hours: space.hours,
-                  imageUrl: space.photos.isNotEmpty ? space.photos[0] : null,
-                );
-              },
+            return Padding(
+              padding: EdgeInsets.only(top: 44),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: eventSpaces.length,
+                itemBuilder: (context, index) {
+                  final space = eventSpaces[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EventSpaceDetailScreen(
+                            eventSpace: space,
+                          ),
+                        ),
+                      );
+                    },
+                    child: LocationCard(
+                      title: space.name,
+                      subtitle: _formatActivities(space.activities),
+                      rating: space.getAverageRating(),
+                      hours: space.hours,
+                      imageUrl:
+                          space.photos.isNotEmpty ? space.photos[0] : null,
+                    ),
+                  );
+                },
+              ),
             );
           } catch (e, stackTrace) {
             print('Error converting data: $e');

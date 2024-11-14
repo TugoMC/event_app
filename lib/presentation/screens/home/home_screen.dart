@@ -3,7 +3,9 @@ import 'package:event_app/data/models/city.dart';
 import 'package:event_app/data/models/commune.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/data/models/review.dart';
+import 'package:event_app/presentation/screens/communes/all_commune.dart';
 import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
+import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:event_app/presentation/screens/profile/profile_screen.dart';
 import 'package:event_app/presentation/screens/search/search.dart';
 import 'package:flutter/cupertino.dart';
@@ -171,7 +173,13 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const AllCommunesScreen()),
+                        );
+                      },
                       child: Row(
                         children: [
                           const Text(
@@ -353,14 +361,26 @@ class HomeScreen extends StatelessWidget {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: eventSpaces.map((space) {
-                          return LocationCard(
-                            title: space.name,
-                            subtitle: _formatActivities(space.activities),
-                            rating: space.getAverageRating(),
-                            hours: space.hours,
-                            imageUrl: space.photos.isNotEmpty
-                                ? space.photos[0]
-                                : null,
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EventSpaceDetailScreen(
+                                    eventSpace: space,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: LocationCard(
+                              title: space.name,
+                              subtitle: _formatActivities(space.activities),
+                              rating: space.getAverageRating(),
+                              hours: space.hours,
+                              imageUrl: space.photos.isNotEmpty
+                                  ? space.photos[0]
+                                  : null,
+                            ),
                           );
                         }).toList(),
                       );
