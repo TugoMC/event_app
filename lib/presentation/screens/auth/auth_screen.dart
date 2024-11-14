@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../dashboard/main_screen.dart';
 import '../home/home_screen.dart';
 import 'register_screen.dart';
 
@@ -38,15 +38,17 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _passwordController.text.trim(),
       );
 
-      if (_isRememberMeChecked) {
-        await _auth.setPersistence(Persistence.LOCAL);
-      } else {
-        await _auth.setPersistence(Persistence.SESSION);
+      if (kIsWeb) {
+        if (_isRememberMeChecked) {
+          await _auth.setPersistence(Persistence.LOCAL);
+        } else {
+          await _auth.setPersistence(Persistence.SESSION);
+        }
       }
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen()),
       );
     } on FirebaseAuthException catch (e) {
       String message = 'Une erreur est survenue';
@@ -88,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Rediriger vers la HomeScreen après une connexion réussie
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
+          MaterialPageRoute(builder: (context) => HomeScreen()),
         );
       }
     } catch (e) {
@@ -191,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const SizedBox(height: 32),
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -245,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 16),
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -370,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           height: 62,
                           child: ElevatedButton(
                             onPressed:

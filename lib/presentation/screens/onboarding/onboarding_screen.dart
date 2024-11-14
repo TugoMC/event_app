@@ -89,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(
               children: [
                 SizedBox(
-                  width: 327,
+                  width: MediaQuery.of(context).size.width * 0.9,
                   height: 62,
                   child: ElevatedButton(
                     onPressed: _nextPage,

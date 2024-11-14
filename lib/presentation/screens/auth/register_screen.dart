@@ -157,7 +157,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 32),
                         // Champ Email
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -207,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 16),
                         // Champ Mot de passe
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -272,7 +272,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 16),
                         // Champ Confirmer le mot de passe
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -337,7 +337,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 16),
                         // Checkbox Conditions d'utilisation
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           child: Row(
                             children: [
                               SizedBox(
@@ -372,7 +372,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 24),
                         // Bouton d'inscription
                         Container(
-                          width: 327,
+                          width: MediaQuery.of(context).size.width * 0.9,
                           height: 62,
                           child: ElevatedButton(
                             onPressed: _isLoading
