@@ -5,6 +5,7 @@ import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/data/models/review.dart';
 import 'package:event_app/presentation/screens/communes/all_commune.dart';
 import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:event_app/presentation/screens/profile/profile_screen.dart';
 import 'package:event_app/presentation/screens/search/search.dart';
@@ -43,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isScrolled = false;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final user = FirebaseAuth.instance.currentUser;
+  bool get isAdmin => user?.email == 'ouattarajunior418@gmail.com';
 
   @override
   void initState() {
@@ -139,6 +141,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               height: 100,
                             ),
                             const Spacer(),
+                            // Afficher le bouton dashboard uniquement pour l'admin
+                            if (isAdmin)
+                              _buildCircularButton(
+                                icon: const Icon(CupertinoIcons.square_grid_2x2,
+                                    color: Colors.black),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const DashboardScreen()),
+                                  );
+                                },
+                              ),
                             _buildCircularButton(
                               icon: const Icon(CupertinoIcons.search,
                                   color: Colors.black),

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Style constants matching exactly with AllCommunesScreen
 class _ProfileStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
@@ -231,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: const Text(
-                        'Profile',
+                        'Profil',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 16,
@@ -310,7 +309,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               Center(
                 child: Text(
-                  user?.displayName ?? user?.email?.split('@')[0] ?? 'User',
+                  user?.displayName ??
+                      user?.email?.split('@')[0] ??
+                      'Utilisateur',
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -320,7 +321,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 32),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.person, color: Colors.orange[400]),
-                title: 'Personal Info',
+                title: 'Informations personnelles',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -331,7 +332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.heart, color: Colors.pink[400]),
-                title: 'Favourite',
+                title: 'Favoris',
                 onTap: () {
                   Navigator.push(
                     context,
@@ -344,20 +345,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icon(CupertinoIcons.bell, color: Colors.yellow[700]),
                 title: 'Notifications',
                 onTap: () {
-                  // Navigation to Notifications
+                  // Navigation vers les notifications
                 },
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.star, color: Colors.blue[400]),
-                title: 'User Reviews',
+                title: 'Avis utilisateur',
                 onTap: () {
-                  // Navigation to User Reviews
+                  // Navigation vers les avis utilisateur
                 },
               ),
               const SizedBox(height: 32),
               _buildMenuItem(
                 icon: Icon(Icons.logout, color: Colors.red[400]),
-                title: 'Log Out',
+                title: 'Se déconnecter',
                 onTap: () => _showLogoutConfirmationDialog(context),
                 showArrow: false,
                 textColor: Colors.red,
