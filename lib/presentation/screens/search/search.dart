@@ -1,5 +1,22 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+// Constantes de style réutilisées de AllCommunesScreen
+class _AppBarStyles {
+  static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
+  static const double buttonRowHeight = 52.0;
+  static const double bannerHeight = 44.0;
+  static const double circularButtonSize = 46.0;
+  static const double circularButtonMargin = 5.0;
+  static const double horizontalPadding = 24.0;
+  static const double titleContainerHeight = 46.0;
+  static const EdgeInsets titlePadding =
+      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0);
+  static const double spaceBetweenButtonAndTitle = 8.0;
+  static const double borderRadius = 20.0;
+  static const double scrollThreshold = 80.0;
+}
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -10,6 +27,8 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _isScrolled = false;
 
   final List<String> recentKeywords = [
     'Burger',
@@ -28,70 +47,205 @@ class _SearchScreenState extends State<SearchScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top bar with back button and search field
-                Row(
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset > _AppBarStyles.scrollThreshold &&
+        !_isScrolled) {
+      setState(() => _isScrolled = true);
+    } else if (_scrollController.offset <= _AppBarStyles.scrollThreshold &&
+        _isScrolled) {
+      setState(() => _isScrolled = false);
+    }
+  }
+
+  Widget _buildCircularButton({
+    required Widget icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: _AppBarStyles.circularButtonSize,
+      height: _AppBarStyles.circularButtonSize,
+      margin:
+          EdgeInsets.symmetric(horizontal: _AppBarStyles.circularButtonMargin),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: IconButton(
+        icon: icon,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context,
+      {required bool showBanner}) {
+    final appBarHeight = showBanner
+        ? _AppBarStyles.appBarTotalHeight
+        : _AppBarStyles.appBarTotalHeight - _AppBarStyles.bannerHeight;
+
+    return PreferredSize(
+      preferredSize: Size.fromHeight(appBarHeight),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: _isScrolled
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
+                  )
+                ]
+              : null,
+        ),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: appBarHeight,
+          automaticallyImplyLeading: false,
+          flexibleSpace: Column(
+            children: [
+              if (showBanner)
+                Container(
+                  width: double.infinity,
+                  height: _AppBarStyles.bannerHeight,
+                ),
+              SafeArea(
+                child: Column(
                   children: [
-                    // Back button
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: const Icon(Icons.arrow_back),
-                    ),
-                    const SizedBox(width: 12),
-                    // Search field
-                    Expanded(
-                      child: Container(
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF6F6F6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          autofocus: true,
-                          decoration: InputDecoration(
-                            hintText: 'Rechercher',
-                            hintStyle: TextStyle(color: Colors.grey[600]),
-                            prefixIcon: Padding(
-                              padding:
-                                  const EdgeInsets.only(left: 20, right: 16),
-                              child: Icon(CupertinoIcons.search,
-                                  color: Color(0xFFA0A5BA), size: 24),
+                    SizedBox(
+                      height: _AppBarStyles.buttonRowHeight,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: _AppBarStyles.horizontalPadding),
+                        child: Row(
+                          children: [
+                            _buildCircularButton(
+                              icon: const Icon(
+                                CupertinoIcons.back,
+                                color: Colors.black,
+                              ),
+                              onPressed: () => Navigator.pop(context),
                             ),
-                            suffixIcon: _searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: const Icon(Icons.clear,
-                                        color: Color(0xFFA0A5BA)),
-                                    onPressed: () {
-                                      setState(() {
-                                        _searchController.clear();
-                                      });
-                                    },
-                                  )
-                                : null,
-                            border: InputBorder.none,
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 20),
-                          ),
-                          onChanged: (value) {
-                            setState(() {});
-                          },
+                            const Spacer(),
+                            _buildCircularButton(
+                              icon: const HugeIcon(
+                                icon:
+                                    HugeIcons.strokeRoundedPreferenceHorizontal,
+                                color: Colors.black,
+                                size: 24.0,
+                              ),
+                              onPressed: () {
+                                // Filtre
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: _AppBarStyles.spaceBetweenButtonAndTitle),
+                    Container(
+                      width: double.infinity,
+                      height: _AppBarStyles.titleContainerHeight,
+                      margin: EdgeInsets.symmetric(
+                          horizontal: _AppBarStyles.horizontalPadding),
+                      padding: _AppBarStyles.titlePadding,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF6F6F6),
+                        borderRadius:
+                            BorderRadius.circular(_AppBarStyles.borderRadius),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Center(
+                        // Ajout du Center ici
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment
+                              .center, // Centrage vertical des éléments de la Row
+                          children: [
+                            Icon(CupertinoIcons.search,
+                                color: Color(0xFFA0A5BA), size: 24),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextField(
+                                controller: _searchController,
+                                autofocus: true,
+                                style: const TextStyle(
+                                  height:
+                                      1.0, // Ajustement de la hauteur de ligne
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'Rechercher',
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.zero,
+                                  isDense:
+                                      true, // Rend le TextField plus compact
+                                ),
+                                onChanged: (value) {
+                                  setState(() {});
+                                },
+                              ),
+                            ),
+                            if (_searchController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear,
+                                    color: Color(0xFFA0A5BA)),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                  });
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                // Recent Keywords Section
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(context, showBanner: true),
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: _AppBarStyles.appBarTotalHeight + 20,
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_searchController.text.isEmpty) ...[
                 const Text(
                   'Recent Keywords',
                   style: TextStyle(
@@ -100,8 +254,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
-                // Recent Keywords Chips
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -121,75 +273,61 @@ class _SearchScreenState extends State<SearchScreen> {
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 24),
-
-                // Results Section
-                if (_searchController.text.isNotEmpty) ...[
-                  const Text(
-                    'Résultats',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Search Results List
-                  ...searchResults.map((result) => Container(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          children: [
-                            // Restaurant Image Placeholder
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-
-                            // Restaurant Details
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  result['name'],
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.star,
-                                        size: 16, color: Colors.purple[400]),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      result['rating'].toString(),
-                                      style: const TextStyle(fontSize: 14),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )),
-                ],
               ],
-            ),
+              if (_searchController.text.isNotEmpty) ...[
+                const Text(
+                  'Résultats',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ...searchResults.map((result) => Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                result['name'],
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(Icons.star,
+                                      size: 16, color: Colors.purple[400]),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    result['rating'].toString(),
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    )),
+              ],
+            ],
           ),
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }

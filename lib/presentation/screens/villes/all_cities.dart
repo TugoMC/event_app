@@ -1,11 +1,10 @@
+import 'package:event_app/presentation/screens/villes/city_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:event_app/data/models/commune.dart';
-import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
+import 'package:event_app/data/models/city.dart';
 
-// Constantes de style déplacées directement dans la classe
+// Constantes de style
 class _AppBarStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
@@ -21,14 +20,14 @@ class _AppBarStyles {
   static const double scrollThreshold = 80.0;
 }
 
-class AllCommunesScreen extends StatefulWidget {
-  const AllCommunesScreen({super.key});
+class AllCitiesScreen extends StatefulWidget {
+  const AllCitiesScreen({super.key});
 
   @override
-  State<AllCommunesScreen> createState() => _AllCommunesScreenState();
+  State<AllCitiesScreen> createState() => _AllCitiesScreenState();
 }
 
-class _AllCommunesScreenState extends State<AllCommunesScreen> {
+class _AllCitiesScreenState extends State<AllCitiesScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
@@ -129,17 +128,6 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
-                            _buildCircularButton(
-                              icon: const HugeIcon(
-                                icon:
-                                    HugeIcons.strokeRoundedPreferenceHorizontal,
-                                color: Colors.black,
-                                size: 24.0,
-                              ),
-                              onPressed: () {
-                                // Filtre
-                              },
-                            ),
                           ],
                         ),
                       ),
@@ -158,7 +146,7 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
                         border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: const Text(
-                        'Toutes les communes',
+                        'Toutes les villes',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 16,
@@ -183,7 +171,7 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('communes').snapshots(),
+        stream: FirebaseFirestore.instance.collection('cities').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(child: Text('Une erreur est survenue'));
@@ -193,9 +181,12 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final communes = snapshot.data!.docs.map((doc) {
+          final cities = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            return Commune.fromJson(data);
+            return City(
+              id: doc.id,
+              name: data['name'] as String,
+            );
           }).toList();
 
           return GridView.builder(
@@ -212,18 +203,18 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
-            itemCount: communes.length,
+            itemCount: cities.length,
             itemBuilder: (context, index) {
-              final commune = communes[index];
-              return CommuneGridCard(
-                name: commune.name,
-                imageUrl: commune.photoUrl,
+              final city = cities[index];
+              return CityGridCard(
+                name: city.name,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => CommuneDetailsScreen(
-                        communeName: commune.name,
+                      builder: (context) => CityDetailScreen(
+                        cityId: city.id,
+                        cityName: city.name,
                       ),
                     ),
                   );
@@ -237,15 +228,13 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
   }
 }
 
-class CommuneGridCard extends StatelessWidget {
+class CityGridCard extends StatelessWidget {
   final String name;
-  final String imageUrl;
   final VoidCallback onTap;
 
-  const CommuneGridCard({
+  const CityGridCard({
     super.key,
     required this.name,
-    required this.imageUrl,
     required this.onTap,
   });
 
@@ -257,6 +246,13 @@ class CommuneGridCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,31 +260,17 @@ class CommuneGridCard extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: const BorderRadius.all(Radius.circular(16)),
+                  color: const Color(0xFF8B5CF6),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(16),
-                  ),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(color: Colors.white);
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
+                child: Center(
+                  child: Text(
+                    name.substring(0, 2).toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),

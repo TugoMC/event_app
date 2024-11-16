@@ -3,6 +3,20 @@ import 'package:event_app/data/models/event_space.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+class _AppBarStyles {
+  static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
+  static const double buttonRowHeight = 52.0;
+  static const double bannerHeight = 44.0;
+  static const double circularButtonSize = 46.0;
+  static const double circularButtonMargin = 5.0;
+  static const double horizontalPadding = 24.0;
+  static const double titleContainerHeight = 46.0;
+  static const EdgeInsets titlePadding =
+      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0);
+  static const double spaceBetweenButtonAndTitle = 8.0;
+  static const double borderRadius = 20.0;
+}
+
 class EventSpaceDetailScreen extends StatefulWidget {
   final EventSpace eventSpace;
 
@@ -29,55 +43,119 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
     );
   }
 
+  Widget _buildCircularButton({
+    required Widget icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: _AppBarStyles.circularButtonSize,
+      height: _AppBarStyles.circularButtonSize,
+      margin:
+          EdgeInsets.symmetric(horizontal: _AppBarStyles.circularButtonMargin),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: IconButton(
+        icon: icon,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context,
+      {required bool showBanner}) {
+    final appBarHeight = showBanner
+        ? _AppBarStyles.appBarTotalHeight
+        : _AppBarStyles.appBarTotalHeight - _AppBarStyles.bannerHeight;
+
+    return PreferredSize(
+      preferredSize: Size.fromHeight(appBarHeight),
+      child: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        toolbarHeight: appBarHeight,
+        automaticallyImplyLeading: false,
+        flexibleSpace: Column(
+          children: [
+            if (showBanner)
+              Container(
+                width: double.infinity,
+                height: _AppBarStyles.bannerHeight,
+              ),
+            SafeArea(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: _AppBarStyles.buttonRowHeight,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: _AppBarStyles.horizontalPadding),
+                      child: Row(
+                        children: [
+                          _buildCircularButton(
+                            icon: const Icon(
+                              CupertinoIcons.back,
+                              color: Colors.black,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Spacer(),
+                          _buildCircularButton(
+                            icon: const Icon(
+                              CupertinoIcons.heart,
+                              color: Colors.black,
+                            ),
+                            onPressed: () {
+                              // Action favori
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: _AppBarStyles.spaceBetweenButtonAndTitle),
+                  Container(
+                    width: double.infinity,
+                    height: _AppBarStyles.titleContainerHeight,
+                    margin: EdgeInsets.symmetric(
+                        horizontal: _AppBarStyles.horizontalPadding),
+                    padding: _AppBarStyles.titlePadding,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.circular(_AppBarStyles.borderRadius),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Text(
+                      widget.eventSpace.name,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: _buildAppBar(context, showBanner: true),
       body: Stack(
         children: [
           CustomScrollView(
             slivers: [
-              // Custom App Bar with back button and title
-              SliverAppBar(
-                backgroundColor: Colors.white,
-                elevation: 0,
-                automaticallyImplyLeading: false,
-                toolbarHeight: 100, // Increased height for better spacing
-                pinned: true, // Changed from floating to pinned
-                title: Padding(
-                  padding: const EdgeInsets.only(top: 50.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.black, size: 20),
-                          onPressed: () => Navigator.pop(context),
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Details',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                centerTitle: false,
-              ),
-
               // Add fixed padding after AppBar
               const SliverPadding(
                 padding: EdgeInsets.only(top: 20),
@@ -125,28 +203,6 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                               ),
                             ),
                             Positioned(
-                              right: 16,
-                              top: 16,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.favorite_border,
-                                      color: Colors.black, size: 20),
-                                  onPressed: () {},
-                                ),
-                              ),
-                            ),
-                            Positioned(
                               bottom: 16,
                               left: 0,
                               right: 0,
@@ -174,17 +230,6 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Title
-                          Text(
-                            widget.eventSpace.name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
                           // Rating, Hours and Price row
                           Row(
                             children: [
@@ -264,7 +309,7 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.phone, size: 16),
+                              const Icon(CupertinoIcons.phone, size: 16),
                               const SizedBox(width: 8),
                               Text(
                                 '+225 01 02 03 04 05',
@@ -330,16 +375,9 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
               ),
               child: Center(
                 child: Row(
@@ -371,14 +409,14 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                       width: 62,
                       height: 62,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF8773F8).withOpacity(0.1),
+                        color: const Color(0xFF8773F8),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: IconButton(
                         onPressed: () {},
                         icon: const Icon(
-                          Icons.location_on,
-                          color: Color(0xFF8773F8),
+                          CupertinoIcons.location_solid,
+                          color: Colors.white,
                         ),
                       ),
                     ),

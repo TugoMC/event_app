@@ -1,11 +1,9 @@
+import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/models/commune.dart';
-import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
 
-// Constantes de style déplacées directement dans la classe
 class _AppBarStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
@@ -21,14 +19,21 @@ class _AppBarStyles {
   static const double scrollThreshold = 80.0;
 }
 
-class AllCommunesScreen extends StatefulWidget {
-  const AllCommunesScreen({super.key});
+class CityDetailScreen extends StatefulWidget {
+  final String cityId;
+  final String cityName;
+
+  const CityDetailScreen({
+    super.key,
+    required this.cityId,
+    required this.cityName,
+  });
 
   @override
-  State<AllCommunesScreen> createState() => _AllCommunesScreenState();
+  State<CityDetailScreen> createState() => _CityDetailScreenState();
 }
 
-class _AllCommunesScreenState extends State<AllCommunesScreen> {
+class _CityDetailScreenState extends State<CityDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
@@ -129,17 +134,6 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
-                            _buildCircularButton(
-                              icon: const HugeIcon(
-                                icon:
-                                    HugeIcons.strokeRoundedPreferenceHorizontal,
-                                color: Colors.black,
-                                size: 24.0,
-                              ),
-                              onPressed: () {
-                                // Filtre
-                              },
-                            ),
                           ],
                         ),
                       ),
@@ -157,9 +151,9 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
                             BorderRadius.circular(_AppBarStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: const Text(
-                        'Toutes les communes',
-                        style: TextStyle(
+                      child: Text(
+                        widget.cityName,
+                        style: const TextStyle(
                           color: Colors.black,
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -183,7 +177,10 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('communes').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('communes')
+            .where('cityId', isEqualTo: widget.cityId)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(child: Text('Une erreur est survenue'));
@@ -195,41 +192,56 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
 
           final communes = snapshot.data!.docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
-            return Commune.fromJson(data);
+            return Commune(
+              id: doc.id,
+              name: data['name'] as String,
+              photoUrl: data['photoUrl'] as String,
+              cityId: data['cityId'] as String,
+            );
           }).toList();
 
-          return GridView.builder(
-            controller: _scrollController,
+          if (communes.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: _AppBarStyles.appBarTotalHeight + 20,
+                ),
+                child: const Text('Aucune commune trouvée'),
+              ),
+            );
+          }
+
+          return Padding(
             padding: EdgeInsets.only(
               top: _AppBarStyles.appBarTotalHeight + 20,
-              left: 20,
-              right: 20,
-              bottom: 20,
             ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.85,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: communes.length,
-            itemBuilder: (context, index) {
-              final commune = communes[index];
-              return CommuneGridCard(
-                name: commune.name,
-                imageUrl: commune.photoUrl,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CommuneDetailsScreen(
-                        communeName: commune.name,
+            child: GridView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(20),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.75,
+              ),
+              itemCount: communes.length,
+              itemBuilder: (context, index) {
+                final commune = communes[index];
+                return CommuneGridCard(
+                  name: commune.name,
+                  imageUrl: commune.photoUrl,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CommuneDetailsScreen(
+                            communeName: commune.name), // Fixed this line
                       ),
-                    ),
-                  );
-                },
-              );
-            },
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),
@@ -257,6 +269,13 @@ class CommuneGridCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
