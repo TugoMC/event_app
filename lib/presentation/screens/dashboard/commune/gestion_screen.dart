@@ -1,3 +1,6 @@
+import 'package:event_app/presentation/screens/dashboard/commune/add_commune_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/commune/commune_list_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/commune/edit_commune_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -225,30 +228,28 @@ class _DistrictsManagementScreenState extends State<DistrictsManagementScreen> {
                     color: Colors.green[400]),
                 title: 'Ajouter une commune',
                 onTap: () {
-                  // Navigation vers l'ajout de commune
+                  // Navigation vers la page d'ajout de commune
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          AddCommuneScreen(), // Remplacez AddCommuneScreen par le nom correct de votre page d'ajout
+                    ),
+                  );
                 },
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.list_bullet, color: Colors.blue[400]),
                 title: 'Toutes les communes',
                 onTap: () {
-                  // Navigation vers la liste des communes
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.pencil_circle_fill,
-                    color: Colors.orange[400]),
-                title: 'Modifier une commune',
-                onTap: () {
-                  // Navigation vers la modification des communes
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.trash_circle_fill,
-                    color: Colors.red[400]),
-                title: 'Supprimer une commune',
-                onTap: () {
-                  // Navigation vers la suppression des communes
+                  // Navigation vers la page de liste des communes
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CommuneListScreen(), // Remplacez AllCommunesScreen par votre page de liste des communes
+                    ),
+                  );
                 },
               ),
             ],

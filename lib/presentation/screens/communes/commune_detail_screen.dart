@@ -169,6 +169,8 @@ class CommuneDetailsScreen extends StatelessWidget {
                       .map((activityData) {
                         if (activityData is Map<String, dynamic>) {
                           return Activity(
+                            id: activityData['id'] ??
+                                doc.id, // Ajouter un ID ici, ou utilisez doc.id si vous n'avez pas de champ id
                             type: activityData['type'] as String,
                             icon: IconData(
                               activityData['icon'],

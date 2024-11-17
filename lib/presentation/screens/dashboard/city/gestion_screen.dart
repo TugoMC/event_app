@@ -1,3 +1,7 @@
+import 'package:event_app/presentation/screens/dashboard/city/add_city_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/city/city_list_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/city/delete_city_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/city/edit_city_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -223,22 +227,45 @@ class _CitiesManagementScreenState extends State<CitiesManagementScreen> {
                     color: Colors.green[400]),
                 title: 'Ajouter une ville',
                 onTap: () {
-                  // Navigation vers l'ajout de ville
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddCityScreen()),
+                  );
                 },
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.list_bullet, color: Colors.blue[400]),
                 title: 'Toutes les villes',
                 onTap: () {
-                  // Navigation vers la liste des villes
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CitiesListScreen()),
+                  );
                 },
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.pencil_circle_fill,
                     color: Colors.orange[400]),
                 title: 'Modifier une ville',
-                onTap: () {
-                  // Navigation vers la modification des villes
+                onTap: () async {
+                  final selectedCity = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const CitiesListScreen()),
+                  );
+                  if (selectedCity != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditCityScreen(
+                          cityId: selectedCity.id,
+                          initialName: selectedCity.name,
+                        ),
+                      ),
+                    );
+                  }
                 },
               ),
               _buildMenuItem(
@@ -246,7 +273,11 @@ class _CitiesManagementScreenState extends State<CitiesManagementScreen> {
                     color: Colors.red[400]),
                 title: 'Supprimer une ville',
                 onTap: () {
-                  // Navigation vers la suppression des villes
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const DeleteCityScreen()),
+                  );
                 },
               ),
             ],

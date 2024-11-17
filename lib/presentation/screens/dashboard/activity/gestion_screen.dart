@@ -1,3 +1,7 @@
+import 'package:event_app/presentation/screens/dashboard/activity/activity_list_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/activity/add_activity_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/activity/delete_activity_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/activity/edit_activity_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -226,30 +230,22 @@ class _ActivitiesManagementScreenState
                     color: Colors.green[400]),
                 title: 'Ajouter une activité',
                 onTap: () {
-                  // Navigation vers l'ajout d'activité
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddActivityScreen()),
+                  );
                 },
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.list_bullet, color: Colors.blue[400]),
                 title: 'Toutes les activités',
                 onTap: () {
-                  // Navigation vers la liste des activités
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.pencil_circle_fill,
-                    color: Colors.orange[400]),
-                title: 'Modifier une activité',
-                onTap: () {
-                  // Navigation vers la modification des activités
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.trash_circle_fill,
-                    color: Colors.red[400]),
-                title: 'Supprimer une activité',
-                onTap: () {
-                  // Navigation vers la suppression des activités
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ActivitiesListScreen()),
+                  );
                 },
               ),
             ],

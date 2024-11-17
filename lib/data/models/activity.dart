@@ -1,37 +1,43 @@
-// lib/data/models/activity.dart
 import 'package:flutter/material.dart';
 
 class Activity {
+  final String id;
   final String type;
   final IconData icon;
 
   Activity({
+    required this.id,
     required this.type,
     required this.icon,
   });
 
-  // Ajout des méthodes de sérialisation
   Map<String, dynamic> toJson() => {
         'type': type,
         'icon': icon.codePoint,
+        'icon_family': icon.fontFamily,
       };
 
-  factory Activity.fromJson(Map<String, dynamic> json) => Activity(
-        type: json['type'],
-        icon: IconData(json['icon'], fontFamily: 'MaterialIcons'),
+  factory Activity.fromJson(Map<String, dynamic> json, [String? documentId]) =>
+      Activity(
+        id: documentId ??
+            json['id'] ??
+            '', // Utiliser documentId s'il est fourni
+        type: json['type'] as String,
+        icon: IconData(
+          json['icon'] as int,
+          fontFamily: json['icon_family'] as String? ?? 'MaterialIcons',
+        ),
       );
-}
 
-// Liste des activités avec icônes associées
-List<Activity> activities = [
-  Activity(type: "Restaurant", icon: Icons.restaurant),
-  Activity(type: "Piscine", icon: Icons.pool),
-  Activity(type: "Salle de sport", icon: Icons.fitness_center),
-  Activity(type: "Cinéma", icon: Icons.movie),
-  Activity(type: "Théâtre", icon: Icons.theater_comedy),
-  Activity(type: "Salle de concert", icon: Icons.music_note),
-  Activity(type: "Café", icon: Icons.local_cafe),
-  Activity(type: "Bibliothèque", icon: Icons.local_library),
-  Activity(type: "Terrain de sport", icon: Icons.sports_soccer),
-  Activity(type: "Spa", icon: Icons.spa),
-];
+  Activity copyWith({
+    String? id,
+    String? type,
+    IconData? icon,
+  }) {
+    return Activity(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      icon: icon ?? this.icon,
+    );
+  }
+}

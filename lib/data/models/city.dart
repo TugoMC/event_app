@@ -39,17 +39,3 @@ class City {
             (json['communes'] as List).map((c) => Commune.fromJson(c)).toList(),
       );
 }
-
-// Liste des villes
-final List<City> cities = [
-  City(id: "1", name: "Abidjan"),
-  City(id: "2", name: "Bouaké"),
-  City(id: "3", name: "Daloa"),
-  City(id: "4", name: "San-Pédro"),
-  City(id: "5", name: "Yamoussoukro"),
-  City(id: "6", name: "Korhogo"),
-  City(id: "7", name: "Man"),
-  City(id: "8", name: "Adzopé"),
-  City(id: "9", name: "Sassandra"),
-  City(id: "10", name: "Bondoukou"),
-];

@@ -42,6 +42,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  final Stream<QuerySnapshot> _citiesStream =
+      FirebaseFirestore.instance.collection('cities').snapshots();
+
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final user = FirebaseAuth.instance.currentUser;
   bool get isAdmin => user?.email == 'ouattarajunior418@gmail.com';
@@ -289,17 +292,42 @@ class _HomeScreenState extends State<HomeScreen> {
               // Cities Cards
               SizedBox(
                 height: 95,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: cities.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final city = cities[index];
-                    return CityCard(
-                      id: city.id, // Ajout de l'id
-                      name: city.name,
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _citiesStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return const Center(
+                          child: Text('Une erreur est survenue'));
+                    }
+
+                    if (!snapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    // Map Firestore documents to City models
+                    final cities = snapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      return City.fromJson(data);
+                    }).toList();
+
+                    if (cities.isEmpty) {
+                      return const Center(
+                          child: Text('Aucune ville disponible'));
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: cities.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final city = cities[index];
+                        return CityCard(
+                          id: city.id,
+                          name: city.name,
+                        );
+                      },
                     );
                   },
                 ),
@@ -419,6 +447,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               .map((activityData) {
                                 if (activityData is Map<String, dynamic>) {
                                   return Activity(
+                                    id: activityData['id'] ??
+                                        doc.id, // Ajouter un ID ici, ou utilisez doc.id si vous n'avez pas de champ id
                                     type: activityData['type'] as String,
                                     icon: IconData(
                                       activityData['icon'],
