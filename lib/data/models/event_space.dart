@@ -17,13 +17,13 @@ class EventSpace {
   final String hours;
   final double price;
   final String phoneNumber;
-  final List<String> photos;
+  final List<String> photoUrls;
   final String location;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isActive;
   final String createdBy;
-  final int version; // Pour le versioning
+  final int version;
 
   static const int maxDescriptionLength = 1000;
   static const int minDescriptionLength = 50;
@@ -39,7 +39,7 @@ class EventSpace {
     required this.hours,
     required this.price,
     required this.phoneNumber,
-    required this.photos,
+    required this.photoUrls,
     required this.location,
     required this.createdAt,
     this.updatedAt,
@@ -47,15 +47,8 @@ class EventSpace {
     required this.createdBy,
     this.version = 1,
   }) {
-    // Validations
     if (price < 0) {
       throw ArgumentError('Le prix ne peut pas être négatif');
-    }
-    if (!isValidPhoneNumber(phoneNumber)) {
-      throw ArgumentError('Format de numéro de téléphone invalide');
-    }
-    if (!isValidHours(hours)) {
-      throw ArgumentError('Format des heures invalide');
     }
     if (!commune.cityId.contains(city.id)) {
       throw ArgumentError('La commune doit appartenir à la ville spécifiée');
@@ -69,23 +62,26 @@ class EventSpace {
     if (name.trim().isEmpty) {
       throw ArgumentError('Le nom ne peut pas être vide');
     }
-    if (photos.isEmpty) {
-      throw ArgumentError('Au moins une photo est requise');
+    if (photoUrls.isEmpty) {
+      throw ArgumentError('Au moins une URL de photo est requise');
     }
-  }
 
-  bool isValidPhoneNumber(String phone) {
-    // Format attendu: +225 XX XX XX XX XX ou 07 XX XX XX XX
-    final RegExp phoneRegex = RegExp(
-        r'^\+225\s\d{2}\s\d{2}\s\d{2}\s\d{2}\s\d{2}$|^0[1-9]\s\d{2}\s\d{2}\s\d{2}\s\d{2}$');
-    return phoneRegex.hasMatch(phone);
-  }
+    // Validation des URLs des photos
+    for (final photoUrl in photoUrls) {
+      final uri = Uri.tryParse(photoUrl);
+      if (uri == null || (!uri.isScheme('http') && !uri.isScheme('https'))) {
+        throw ArgumentError(
+            'Toutes les photos doivent être des URLs valides (http ou https): $photoUrl est invalide');
+      }
+    }
 
-  bool isValidHours(String hours) {
-    // Format attendu: "Lu-Ve: 08:00-18:00, Sa: 09:00-15:00"
-    final RegExp hoursRegex = RegExp(
-        r'^([A-Za-z]{2}(-[A-Za-z]{2})?: \d{2}:\d{2}-\d{2}:\d{2}(, )?)+$');
-    return hoursRegex.hasMatch(hours);
+    final locationUri = Uri.tryParse(location);
+    if (locationUri == null ||
+        !locationUri.host.contains('google.com') ||
+        !locationUri.path.contains('maps')) {
+      throw ArgumentError(
+          'La propriété "location" doit être un URL valide de Google Maps.');
+    }
   }
 
   double getAverageRating() {
@@ -109,7 +105,7 @@ class EventSpace {
     String? hours,
     double? price,
     String? phoneNumber,
-    List<String>? photos,
+    List<String>? photoUrls,
     String? location,
     DateTime? updatedAt,
     bool? isActive,
@@ -125,7 +121,7 @@ class EventSpace {
       hours: hours ?? this.hours,
       price: price ?? this.price,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      photos: photos ?? this.photos,
+      photoUrls: photoUrls ?? this.photoUrls,
       location: location ?? this.location,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
@@ -135,7 +131,6 @@ class EventSpace {
     );
   }
 
-  // Méthodes de sérialisation
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
@@ -147,7 +142,7 @@ class EventSpace {
         'hours': hours,
         'price': price,
         'phoneNumber': phoneNumber,
-        'photos': photos,
+        'photoUrls': photoUrls,
         'location': location,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
@@ -156,28 +151,41 @@ class EventSpace {
         'version': version,
       };
 
-  factory EventSpace.fromJson(Map<String, dynamic> json) => EventSpace(
-        id: json['id'],
-        name: json['name'],
-        description: json['description'],
-        commune: Commune.fromJson(json['commune']),
-        city: City.fromJson(json['city']),
-        activities: (json['activities'] as List)
-            .map((a) => Activity.fromJson(a))
-            .toList(),
-        reviews:
-            (json['reviews'] as List).map((r) => Review.fromJson(r)).toList(),
-        hours: json['hours'],
-        price: json['price'],
-        phoneNumber: json['phoneNumber'],
-        photos: List<String>.from(json['photos']),
-        location: json['location'],
-        createdAt: DateTime.parse(json['createdAt']),
-        updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'])
-            : null,
-        isActive: json['isActive'],
-        createdBy: json['createdBy'],
-        version: json['version'] ?? 1,
-      );
+  factory EventSpace.fromJson(Map<String, dynamic> json) {
+    // Conversion sécurisée du prix
+    double parsePrice(dynamic price) {
+      if (price is int) {
+        return price.toDouble();
+      } else if (price is double) {
+        return price;
+      } else if (price is String) {
+        return double.parse(price);
+      }
+      throw FormatException('Prix invalide: $price');
+    }
+
+    return EventSpace(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      commune: Commune.fromJson(json['commune']),
+      city: City.fromJson(json['city']),
+      activities: (json['activities'] as List)
+          .map((a) => Activity.fromJson(a))
+          .toList(),
+      reviews:
+          (json['reviews'] as List).map((r) => Review.fromJson(r)).toList(),
+      hours: json['hours'],
+      price: parsePrice(json['price']),
+      phoneNumber: json['phoneNumber'],
+      photoUrls: List<String>.from(json['photoUrls']),
+      location: json['location'],
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt:
+          json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      isActive: json['isActive'] ?? true,
+      createdBy: json['createdBy'],
+      version: json['version'] ?? 1,
+    );
+  }
 }

@@ -212,6 +212,7 @@ class _CitiesManagementScreenState extends State<CitiesManagementScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 32),
               const Center(
                 child: Text(
                   'Gestion des Villes',

@@ -515,7 +515,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         hours: data['hours'] as String,
                         price: (data['price'] as num).toDouble(),
                         phoneNumber: data['phoneNumber'] as String,
-                        photos: List<String>.from(data['photos'] ?? []),
                         location: data['location'] as String,
                         createdAt: DateTime.parse(data['createdAt'] as String),
                         updatedAt: data['updatedAt'] != null
@@ -523,6 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             : null,
                         isActive: data['isActive'] as bool? ?? true,
                         createdBy: data['createdBy'] as String,
+                        photoUrls: [],
                       );
                     }).toList();
 
@@ -546,15 +546,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
-                          child: LocationCard(
-                            title: space.name,
-                            subtitle: _formatActivities(space.activities),
-                            rating: space.getAverageRating(),
-                            hours: space.hours,
-                            imageUrl: space.photos.isNotEmpty
-                                ? space.photos[0]
-                                : null,
-                          ),
                         );
                       }).toList(),
                     );

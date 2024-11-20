@@ -38,4 +38,13 @@ class City {
         communes:
             (json['communes'] as List).map((c) => Commune.fromJson(c)).toList(),
       );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is City && id == other.id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

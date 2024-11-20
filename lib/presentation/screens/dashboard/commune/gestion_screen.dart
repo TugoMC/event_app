@@ -1,6 +1,5 @@
 import 'package:event_app/presentation/screens/dashboard/commune/add_commune_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/commune/commune_list_screen.dart';
-import 'package:event_app/presentation/screens/dashboard/commune/edit_commune_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -213,6 +212,7 @@ class _DistrictsManagementScreenState extends State<DistrictsManagementScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 32),
               const Center(
                 child: Text(
                   'Gestion des Communes',

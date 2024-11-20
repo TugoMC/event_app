@@ -1,7 +1,5 @@
 import 'package:event_app/presentation/screens/dashboard/activity/activity_list_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/activity/add_activity_screen.dart';
-import 'package:event_app/presentation/screens/dashboard/activity/delete_activity_screen.dart';
-import 'package:event_app/presentation/screens/dashboard/activity/edit_activity_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -215,6 +213,7 @@ class _ActivitiesManagementScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 32),
               const Center(
                 child: Text(
                   'Gestion des Activités',

@@ -43,4 +43,13 @@ class Commune {
       throw Exception("City with id $cityId not found");
     });
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Commune && id == other.id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

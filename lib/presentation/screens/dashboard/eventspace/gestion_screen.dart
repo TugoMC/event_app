@@ -1,3 +1,6 @@
+import 'package:event_app/presentation/screens/dashboard/eventspace/add_event_space_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/eventspace/delete_event_spaces_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/eventspace/list_event_spaces_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -209,6 +212,7 @@ class _EventSpacesScreenState extends State<EventSpacesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 32),
               const Center(
                 child: Text(
                   'Gestion des Espaces',
@@ -224,22 +228,25 @@ class _EventSpacesScreenState extends State<EventSpacesScreen> {
                     color: Colors.green[400]),
                 title: 'Ajouter un espace événementiel',
                 onTap: () {
-                  // Navigation vers l'ajout d'espace
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          AddEventSpaceScreen(), // Remplacez AddCommuneScreen par le nom correct de votre page d'ajout
+                    ),
+                  );
                 },
               ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.list_bullet, color: Colors.blue[400]),
                 title: 'Tous les espaces événementiels',
                 onTap: () {
-                  // Navigation vers la liste des espaces
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.pencil_circle_fill,
-                    color: Colors.orange[400]),
-                title: 'Modifier les espaces événementiels',
-                onTap: () {
-                  // Navigation vers la modification des espaces
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ListEventSpacesScreen(),
+                    ),
+                  );
                 },
               ),
               _buildMenuItem(
@@ -247,7 +254,12 @@ class _EventSpacesScreenState extends State<EventSpacesScreen> {
                     color: Colors.red[400]),
                 title: 'Supprimer les espaces événementiels',
                 onTap: () {
-                  // Navigation vers la suppression des espaces
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DeleteEventSpacesScreen(),
+                    ),
+                  );
                 },
               ),
             ],

@@ -1,4 +1,3 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -176,42 +175,6 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(32),
                                 color: Colors.grey[300],
-                              ),
-                              child: CarouselSlider(
-                                options: CarouselOptions(
-                                  height: 200,
-                                  viewportFraction: 1,
-                                  enableInfiniteScroll: true,
-                                  autoPlay: false,
-                                  onPageChanged: (index, reason) {
-                                    setState(() {
-                                      _currentPage = index;
-                                    });
-                                  },
-                                ),
-                                items: widget.eventSpace.photos.map((photo) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(32),
-                                      image: DecorationImage(
-                                        image: NetworkImage(photo),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 16,
-                              left: 0,
-                              right: 0,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(
-                                  widget.eventSpace.photos.length,
-                                  (index) => _buildDot(index),
-                                ),
                               ),
                             ),
                           ],

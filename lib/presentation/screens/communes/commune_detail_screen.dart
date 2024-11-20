@@ -230,7 +230,6 @@ class CommuneDetailsScreen extends StatelessWidget {
                 hours: data['hours'] as String,
                 price: (data['price'] as num).toDouble(),
                 phoneNumber: data['phoneNumber'] as String,
-                photos: List<String>.from(data['photos'] ?? []),
                 location: data['location'] as String,
                 createdAt: DateTime.parse(data['createdAt'] as String),
                 updatedAt: data['updatedAt'] != null
@@ -238,6 +237,7 @@ class CommuneDetailsScreen extends StatelessWidget {
                     : null,
                 isActive: data['isActive'] as bool? ?? true,
                 createdBy: data['createdBy'] as String,
+                photoUrls: [],
               );
             }).toList();
 
@@ -270,8 +270,6 @@ class CommuneDetailsScreen extends StatelessWidget {
                       subtitle: _formatActivities(space.activities),
                       rating: space.getAverageRating(),
                       hours: space.hours,
-                      imageUrl:
-                          space.photos.isNotEmpty ? space.photos[0] : null,
                     ),
                   );
                 },
