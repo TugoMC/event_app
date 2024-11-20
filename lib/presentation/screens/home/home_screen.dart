@@ -421,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Event Spaces Cards - Dynamic
+              // Mise à jour du code dans le StreamBuilder des Event Spaces
               StreamBuilder<QuerySnapshot>(
                 stream: firestore
                     .collection('event_spaces')
@@ -440,81 +440,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   try {
                     final eventSpaces = snapshot.data!.docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
-
-                      // Convert activities
-                      final activitiesList = (data['activities'] as List?)
-                              ?.take(3)
-                              .map((activityData) {
-                                if (activityData is Map<String, dynamic>) {
-                                  return Activity(
-                                    id: activityData['id'] ??
-                                        doc.id, // Ajouter un ID ici, ou utilisez doc.id si vous n'avez pas de champ id
-                                    type: activityData['type'] as String,
-                                    icon: IconData(
-                                      activityData['icon'],
-                                      fontFamily: 'MaterialIcons',
-                                    ),
-                                  );
-                                }
-                                return null;
-                              })
-                              .whereType<Activity>()
-                              .toList() ??
-                          [];
-
-                      // Create the commune
-                      final communeData =
-                          data['commune'] as Map<String, dynamic>;
-                      final commune = Commune(
-                        id: communeData['id'] as String,
-                        name: communeData['name'] as String,
-                        photoUrl: communeData['photoUrl'] as String,
-                        cityId: communeData['cityId'] as String,
-                      );
-
-                      // Create the city
-                      final cityData = data['city'] as Map<String, dynamic>;
-                      final city = City(
-                        id: cityData['id'] as String,
-                        name: cityData['name'] as String,
-                      );
-
-                      // Convert reviews
-                      final reviewsList = (data['reviews'] as List?)
-                              ?.map((reviewData) {
-                                if (reviewData is Map<String, dynamic>) {
-                                  return Review(
-                                    id: reviewData['id'] as String,
-                                    userId: reviewData['userId'] as String,
-                                    eventSpaceId:
-                                        reviewData['eventSpaceId'] as String,
-                                    rating: reviewData['rating'] as int,
-                                    comment: reviewData['comment'] as String,
-                                    createdAt: DateTime.parse(
-                                        reviewData['createdAt'] as String),
-                                    isVerified:
-                                        reviewData['isVerified'] as bool? ??
-                                            false,
-                                  );
-                                }
-                                return null;
-                              })
-                              .whereType<Review>()
-                              .toList() ??
-                          [];
-
-                      // Create the EventSpace
                       return EventSpace(
                         id: doc.id,
                         name: data['name'] as String,
                         description: data['description'] as String,
-                        commune: commune,
-                        city: city,
-                        activities: activitiesList,
-                        reviews: reviewsList,
+                        commune: Commune.fromJson(
+                            data['commune'] as Map<String, dynamic>),
+                        city:
+                            City.fromJson(data['city'] as Map<String, dynamic>),
+                        activities: (data['activities'] as List)
+                            .map((activity) => Activity.fromJson(
+                                activity as Map<String, dynamic>))
+                            .toList(),
+                        reviews: (data['reviews'] as List)
+                            .map((review) =>
+                                Review.fromJson(review as Map<String, dynamic>))
+                            .toList(),
                         hours: data['hours'] as String,
                         price: (data['price'] as num).toDouble(),
                         phoneNumber: data['phoneNumber'] as String,
+                        photoUrls: List<String>.from(data['photoUrls']),
                         location: data['location'] as String,
                         createdAt: DateTime.parse(data['createdAt'] as String),
                         updatedAt: data['updatedAt'] != null
@@ -522,7 +467,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             : null,
                         isActive: data['isActive'] as bool? ?? true,
                         createdBy: data['createdBy'] as String,
-                        photoUrls: [],
                       );
                     }).toList();
 
@@ -546,6 +490,15 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             );
                           },
+                          child: LocationCard(
+                            title: space.name,
+                            subtitle: _formatActivities(space.activities),
+                            rating: space.getAverageRating(),
+                            hours: space.hours,
+                            imageUrl: space.photoUrls.isNotEmpty
+                                ? space.photoUrls.first
+                                : null,
+                          ),
                         );
                       }).toList(),
                     );
@@ -553,7 +506,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     print('Error converting data: $e');
                     print(stackTrace);
                     return const Center(
-                      child: Text('Error loading data'),
+                      child: Text('Erreur lors du chargement des données'),
                     );
                   }
                 },

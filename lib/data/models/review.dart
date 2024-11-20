@@ -7,7 +7,6 @@ class Review {
   final String comment;
   final DateTime createdAt;
   final DateTime? updatedAt;
-  final bool isVerified;
 
   Review({
     required this.id,
@@ -17,13 +16,30 @@ class Review {
     required this.comment,
     required this.createdAt,
     this.updatedAt,
-    this.isVerified = false,
+    List<Review>? existingReviews, // Nouveau paramètre optionnel
+    String?
+        currentReviewId, // Identifiant de la review en cours de modification
   }) {
     if (!isValidRating()) {
       throw ArgumentError('La note doit être comprise entre 1 et 5');
     }
     if (comment.trim().isEmpty) {
       throw ArgumentError('Le commentaire ne peut pas être vide');
+    }
+
+    // Validation modifiée pour permettre la mise à jour de sa propre review
+    if (existingReviews != null) {
+      final existingUserReviews = existingReviews
+          .where((review) =>
+              review.userId == userId && review.eventSpaceId == eventSpaceId)
+          .toList();
+
+      // Autoriser la mise à jour si la review existe déjà et correspond à l'ID en cours de modification
+      if (existingUserReviews.isNotEmpty &&
+          !existingUserReviews.any((review) => review.id == currentReviewId)) {
+        throw ArgumentError(
+            'Un utilisateur ne peut laisser qu\'une seule review par espace d\'événement');
+      }
     }
   }
 
@@ -44,12 +60,12 @@ class Review {
       rating: rating ?? this.rating,
       comment: comment ?? this.comment,
       createdAt: createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      isVerified: isVerified ?? this.isVerified,
+      updatedAt:
+          updatedAt ?? DateTime.now(), // Mettre à jour la date de modification
     );
   }
 
-  // Méthodes de sérialisation
+  // Méthodes de sérialisation inchangées
   Map<String, dynamic> toJson() => {
         'id': id,
         'userId': userId,
@@ -58,7 +74,6 @@ class Review {
         'comment': comment,
         'createdAt': createdAt.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
-        'isVerified': isVerified,
       };
 
   factory Review.fromJson(Map<String, dynamic> json) => Review(
@@ -71,6 +86,5 @@ class Review {
         updatedAt: json['updatedAt'] != null
             ? DateTime.parse(json['updatedAt'])
             : null,
-        isVerified: json['isVerified'],
       );
 }

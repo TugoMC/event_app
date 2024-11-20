@@ -1,6 +1,11 @@
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/data/models/review.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class _AppBarStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -30,7 +35,7 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
 
   Widget _buildDot(int index) {
     return Container(
-      margin: const EdgeInsets.only(right: 5),
+      margin: const EdgeInsets.only(right: 5, top: 5),
       height: 10,
       width: _currentPage == index ? 20 : 10,
       decoration: BoxDecoration(
@@ -40,6 +45,12 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
         borderRadius: BorderRadius.circular(5),
       ),
     );
+  }
+
+  String _formatDate(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    final DateTime date = timestamp.toDate();
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Widget _buildCircularButton({
@@ -102,6 +113,13 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                             onPressed: () => Navigator.pop(context),
                           ),
                           const Spacer(),
+                          _buildCircularButton(
+                            icon: const Icon(
+                              CupertinoIcons.bubble_right,
+                              color: Colors.black,
+                            ),
+                            onPressed: () => _showReviewModal(context),
+                          ),
                           _buildCircularButton(
                             icon: const Icon(
                               CupertinoIcons.heart,
@@ -169,17 +187,39 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       width: double.infinity,
                       child: Center(
-                        child: Stack(
-                          children: [
-                            Container(
+                        child: CarouselSlider(
+                          // Replace the empty Stack here
+                          options: CarouselOptions(
+                            height: 250,
+                            viewportFraction: 1.0,
+                            onPageChanged: (index, reason) {
+                              setState(() {
+                                _currentPage = index;
+                              });
+                            },
+                          ),
+                          items: widget.eventSpace.photoUrls.map((url) {
+                            return Container(
+                              width: double.infinity,
                               decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: NetworkImage(url),
+                                  fit: BoxFit.cover,
+                                ),
                                 borderRadius: BorderRadius.circular(32),
-                                color: Colors.grey[300],
                               ),
-                            ),
-                          ],
+                            );
+                          }).toList(),
                         ),
                       ),
+                    ),
+
+                    // Add dot indicators
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                          widget.eventSpace.photoUrls.length,
+                          (index) => _buildDot(index)),
                     ),
 
                     // Rest of the content with padding
@@ -269,13 +309,14 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+
                           const SizedBox(height: 8),
                           Row(
                             children: [
                               const Icon(CupertinoIcons.phone, size: 16),
                               const SizedBox(width: 8),
                               Text(
-                                '+225 01 02 03 04 05',
+                                widget.eventSpace.phoneNumber,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey[600],
@@ -319,6 +360,161 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                               );
                             }).toList(),
                           ),
+
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Les Avis',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          // Ajoutez ce code après le texte "Les Avis"
+                          widget.eventSpace.reviews.isEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  child: Text(
+                                    'Aucun avis pour le moment',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                )
+                              : // Remplacez le bloc existant par :
+                              StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('reviews')
+                                      .where('eventSpaceId',
+                                          isEqualTo: widget.eventSpace.id)
+                                      .orderBy('createdAt', descending: true)
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              vertical: 20),
+                                          child: CircularProgressIndicator(
+                                            color: Color(0xFF8773F8),
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    if (!snapshot.hasData ||
+                                        snapshot.data!.docs.isEmpty) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
+                                        child: Text(
+                                          'Aucun avis pour le moment',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      );
+                                    }
+
+                                    return ListView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: snapshot.data!.docs.length,
+                                      itemBuilder: (context, index) {
+                                        final reviewData =
+                                            snapshot.data!.docs[index].data()
+                                                as Map<String, dynamic>;
+
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16, vertical: 8),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey[100],
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      CupertinoIcons.star_fill,
+                                                      color: const Color(
+                                                          0xFF8773F8),
+                                                      size: 16,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      (reviewData['rating'] ??
+                                                              0)
+                                                          .toString(),
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const Spacer(),
+                                                    Text(
+                                                      _formatDate(reviewData[
+                                                          'createdAt']),
+                                                      style: TextStyle(
+                                                        color: Colors.grey[600],
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  reviewData['comment'] ?? '',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[800],
+                                                  ),
+                                                ),
+                                                if (reviewData['isVerified'] ??
+                                                    false)
+                                                  Padding(
+                                                    padding:
+                                                        const EdgeInsets.only(
+                                                            top: 8),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                          CupertinoIcons
+                                                              .checkmark_seal_fill,
+                                                          color:
+                                                              Colors.green[600],
+                                                          size: 16,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 4),
+                                                        Text(
+                                                          'Avis vérifié',
+                                                          style: TextStyle(
+                                                            color: Colors
+                                                                .green[600],
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                )
                         ],
                       ),
                     ),
@@ -375,8 +571,21 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                         color: const Color(0xFF8773F8),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: IconButton(
-                        onPressed: () {},
+                      child: // Update the location IconButton
+                          IconButton(
+                        onPressed: () async {
+                          final Uri locationUri =
+                              Uri.parse(widget.eventSpace.location);
+                          if (await canLaunchUrl(locationUri)) {
+                            await launchUrl(locationUri);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Impossible d\'ouvrir la localisation')),
+                            );
+                          }
+                        },
                         icon: const Icon(
                           CupertinoIcons.location_solid,
                           color: Colors.white,
@@ -391,5 +600,248 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
         ],
       ),
     );
+  }
+
+  void _showReviewModal(BuildContext context) {
+    final TextEditingController commentController = TextEditingController();
+    int selectedRating = 3; // Default to 3 stars
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                top: 20,
+                left: 20,
+                right: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 50,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Donnez votre avis',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Note',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedRating = index + 1;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            index < selectedRating
+                                ? CupertinoIcons.star_fill
+                                : CupertinoIcons.star,
+                            color: const Color(0xFF8773F8),
+                            size: 32,
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Commentaire',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: 'Partagez votre expérience...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 62,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Logique de soumission de l'avis
+                          _submitReview(context, selectedRating,
+                              commentController.text.trim());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8773F8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Soumettre mon avis',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _submitReview(BuildContext context, int rating, String comment) async {
+    // Validation de base
+    if (comment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez saisir un commentaire')),
+      );
+      return;
+    }
+
+    try {
+      // Récupérer l'utilisateur actuellement connecté
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Vous devez être connecté pour laisser un avis')),
+        );
+        return;
+      }
+
+      // Vérifier si l'utilisateur a déjà laissé un avis pour cet espace
+      final existingReviewQuery = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('userId', isEqualTo: currentUser.uid)
+          .where('eventSpaceId', isEqualTo: widget.eventSpace.id)
+          .get();
+
+      if (existingReviewQuery.docs.isNotEmpty) {
+        // L'utilisateur a déjà laissé un avis, proposer une mise à jour
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Avis existant'),
+            content:
+                const Text('Voulez-vous mettre à jour votre avis précédent ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _updateExistingReview(
+                      existingReviewQuery.docs.first.id, rating, comment);
+                },
+                child: const Text('Mettre à jour'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      // Créer la nouvelle review
+      await FirebaseFirestore.instance.collection('reviews').add({
+        'userId': currentUser.uid,
+        'eventSpaceId': widget.eventSpace.id,
+        'rating': rating,
+        'comment': comment,
+        'createdAt': FieldValue.serverTimestamp(),
+        'isVerified': false,
+      });
+
+      // Fermer le modal
+      if (context.mounted) Navigator.of(context).pop();
+
+      // Afficher un message de succès
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Votre avis a été soumis')),
+        );
+      }
+    } catch (e) {
+      // Gérer les erreurs potentielles
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Erreur lors de la soumission : ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+// Nouvelle méthode pour mettre à jour un avis existant
+  void _updateExistingReview(
+      String reviewId, int rating, String comment) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('reviews')
+          .doc(reviewId)
+          .update({
+        'rating': rating,
+        'comment': comment,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Votre avis a été mis à jour')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Erreur lors de la mise à jour : ${e.toString()}')),
+      );
+    }
   }
 }

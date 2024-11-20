@@ -66,6 +66,20 @@ class EventSpace {
       throw ArgumentError('Au moins une URL de photo est requise');
     }
 
+    /// Vérifie si un utilisateur a déjà laissé une review pour cet espace d'événement
+    bool hasUserAlreadyReviewed(String userId) {
+      return reviews.any((review) => review.userId == userId);
+    }
+
+    /// Ajoute une nouvelle review en vérifiant qu'un utilisateur n'a pas déjà reviewé
+    void addReview(Review newReview) {
+      if (hasUserAlreadyReviewed(newReview.userId)) {
+        throw ArgumentError(
+            'Un utilisateur ne peut laisser qu\'une seule review par espace d\'événement');
+      }
+      reviews.add(newReview);
+    }
+
     // Validation des URLs des photos
     for (final photoUrl in photoUrls) {
       final uri = Uri.tryParse(photoUrl);
