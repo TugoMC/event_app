@@ -1,4 +1,4 @@
-import 'package:event_app/presentation/screens/home/home_screen.dart';
+import 'package:event_app/presentation/screens/home/widgets/location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -219,9 +219,9 @@ class CommuneDetailsScreen extends StatelessWidget {
                     );
                   },
                   child: LocationCard(
+                    id: space.id, // Use space's ID for fetching reviews
                     title: space.name,
                     subtitle: _formatActivities(space.activities),
-                    rating: space.getAverageRating(),
                     hours: space.hours,
                     imageUrl: space.photoUrls.isNotEmpty
                         ? space.photoUrls.first

@@ -1,6 +1,5 @@
 import 'package:event_app/data/models/activity.dart';
 import 'package:flutter/material.dart';
-import 'package:event_app/data/models/event_space.dart';
 
 class ActivitiesSection extends StatelessWidget {
   final List<Activity> activities;

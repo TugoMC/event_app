@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'app_bar_styles.dart';
 
 class ImageCarousel extends StatefulWidget {
   final List<String> photoUrls;
@@ -31,33 +32,41 @@ class _ImageCarouselState extends State<ImageCarousel> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CarouselSlider(
-          options: CarouselOptions(
-            height: 250,
-            viewportFraction: 1.0,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-          ),
-          items: widget.photoUrls.map((url) {
-            return Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(url),
-                  fit: BoxFit.cover,
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppBarStyles.horizontalPadding),
+          child: CarouselSlider(
+            options: CarouselOptions(
+              height: 250,
+              viewportFraction: 1.0,
+              onPageChanged: (index, reason) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+            ),
+            items: widget.photoUrls.map((url) {
+              return Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(url),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(32),
                 ),
-                borderRadius: BorderRadius.circular(32),
-              ),
-            );
-          }).toList(),
+              );
+            }).toList(),
+          ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-              widget.photoUrls.length, (index) => _buildDot(index)),
+        Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppBarStyles.horizontalPadding),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+                widget.photoUrls.length, (index) => _buildDot(index)),
+          ),
         ),
       ],
     );

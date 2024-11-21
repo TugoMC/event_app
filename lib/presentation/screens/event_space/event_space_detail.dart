@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:event_app/data/services/favorites_service.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/activities_section.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/app_bar_styles.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/bottom_buttons.dart';
@@ -5,9 +7,11 @@ import 'package:event_app/presentation/screens/event_space/widgets/details_heade
 import 'package:event_app/presentation/screens/event_space/widgets/image_carousel.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/review_modal.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/reviews_section.dart';
+import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/data/models/favorite.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:event_app/data/models/event_space.dart';
 
 class EventSpaceDetailScreen extends StatefulWidget {
   final EventSpace eventSpace;
@@ -20,6 +24,73 @@ class EventSpaceDetailScreen extends StatefulWidget {
 }
 
 class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
+  final FavoritesService _favoritesService = FavoritesService();
+  bool _isFavorited = false;
+  bool _isLoading = true;
+  late Stream<List<Favorite>> _favoritesStream;
+  String? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _userId = user.uid;
+      });
+      _favoritesStream = _favoritesService.getUserFavorites(_userId!);
+      await _checkInitialFavoriteStatus();
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _checkInitialFavoriteStatus() async {
+    if (_userId == null) return;
+
+    try {
+      final isFavorited = await _favoritesService.isEventSpaceFavorited(
+        _userId!,
+        widget.eventSpace.id,
+      );
+      setState(() {
+        _isFavorited = isFavorited;
+      });
+    } catch (e) {
+      debugPrint('Erreur lors de la vérification du statut favori: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez vous connecter pour ajouter aux favoris'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _favoritesService.toggleFavorite(_userId!, widget.eventSpace.id);
+      setState(() {
+        _isFavorited = !_isFavorited;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Une erreur est survenue lors de la mise à jour du favori'),
+        ),
+      );
+    }
+  }
+
   PreferredSizeWidget _buildAppBar(BuildContext context,
       {required bool showBanner}) {
     final appBarHeight = showBanner
@@ -65,15 +136,7 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                             ),
                             onPressed: () => _showReviewModal(context),
                           ),
-                          _buildCircularButton(
-                            icon: const Icon(
-                              CupertinoIcons.heart,
-                              color: Colors.black,
-                            ),
-                            onPressed: () {
-                              // Action favori
-                            },
-                          ),
+                          _buildFavoriteButton(),
                         ],
                       ),
                     ),
@@ -109,6 +172,29 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
     );
   }
 
+  Widget _buildFavoriteButton() {
+    if (_isLoading) {
+      return _buildCircularButton(
+        icon: const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+          ),
+        ),
+        onPressed: () {},
+      );
+    }
+
+    return _buildCircularButton(
+      icon: Icon(
+        _isFavorited ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+        color: _isFavorited ? Colors.red : Colors.black,
+      ),
+      onPressed: _toggleFavorite,
+    );
+  }
+
   Widget _buildCircularButton({
     required Widget icon,
     required VoidCallback onPressed,
@@ -132,6 +218,15 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
   }
 
   void _showReviewModal(BuildContext context) {
+    if (_userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez vous connecter pour laisser un avis'),
+        ),
+      );
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -165,7 +260,7 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                     ActivitiesSection(activities: widget.eventSpace.activities),
                     ReviewsSection(eventSpaceId: widget.eventSpace.id),
                     const SizedBox(
-                        height: 100), // Add padding for bottom buttons
+                        height: 100), // Espace pour les boutons du bas
                   ],
                 ),
               ),

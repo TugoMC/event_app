@@ -1,5 +1,6 @@
 import 'package:event_app/presentation/screens/profile/favorites_screen.dart';
 import 'package:event_app/presentation/screens/profile/personal_info_screen.dart';
+import 'package:event_app/presentation/screens/profile/user_review_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -93,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Se déconnecter',
+                  'Déconnexion',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -149,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             }
                           },
                           child: const Text(
-                            'Se déconnecter',
+                            'Déconnexion',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -352,7 +353,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icon(CupertinoIcons.star, color: Colors.blue[400]),
                 title: 'Avis utilisateur',
                 onTap: () {
-                  // Navigation vers les avis utilisateur
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const UserReviewsScreen()),
+                  );
                 },
               ),
               const SizedBox(height: 32),

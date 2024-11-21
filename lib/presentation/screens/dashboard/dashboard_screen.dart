@@ -269,7 +269,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const ReviewsManagementScreen()),
+                        builder: (context) =>
+                            const EventSpacesDashboardScreen()),
                   );
                 },
               ),

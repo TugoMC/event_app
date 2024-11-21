@@ -4,33 +4,19 @@ import 'package:event_app/data/models/commune.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/data/models/review.dart';
 import 'package:event_app/presentation/screens/communes/all_commune.dart';
-import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
+import 'package:event_app/presentation/screens/home/widgets/app_bar_styles.dart';
+import 'package:event_app/presentation/screens/home/widgets/city_card.dart';
+import 'package:event_app/presentation/screens/home/widgets/commune_card.dart';
+import 'package:event_app/presentation/screens/home/widgets/location_card.dart';
 import 'package:event_app/presentation/screens/profile/profile_screen.dart';
 import 'package:event_app/presentation/screens/search/search.dart';
 import 'package:event_app/presentation/screens/villes/all_cities.dart';
-import 'package:event_app/presentation/screens/villes/city_detail.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-// Constantes de style pour l'AppBar
-class _AppBarStyles {
-  static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
-  static const double buttonRowHeight = 52.0;
-  static const double bannerHeight = 44.0;
-  static const double circularButtonSize = 46.0;
-  static const double circularButtonMargin = 5.0;
-  static const double horizontalPadding = 24.0;
-  static const double titleContainerHeight = 46.0;
-  static const EdgeInsets titlePadding =
-      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0);
-  static const double spaceBetweenButtonAndTitle = 8.0;
-  static const double borderRadius = 20.0;
-  static const double scrollThreshold = 80.0;
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,10 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.offset > _AppBarStyles.scrollThreshold &&
+    if (_scrollController.offset > AppBarStyles.scrollThreshold &&
         !_isScrolled) {
       setState(() => _isScrolled = true);
-    } else if (_scrollController.offset <= _AppBarStyles.scrollThreshold &&
+    } else if (_scrollController.offset <= AppBarStyles.scrollThreshold &&
         _isScrolled) {
       setState(() => _isScrolled = false);
     }
@@ -77,10 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: _AppBarStyles.circularButtonSize,
-      height: _AppBarStyles.circularButtonSize,
+      width: AppBarStyles.circularButtonSize,
+      height: AppBarStyles.circularButtonSize,
       margin:
-          EdgeInsets.symmetric(horizontal: _AppBarStyles.circularButtonMargin),
+          EdgeInsets.symmetric(horizontal: AppBarStyles.circularButtonMargin),
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
@@ -97,8 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
   PreferredSizeWidget _buildAppBar(BuildContext context,
       {required bool showBanner}) {
     final appBarHeight = showBanner
-        ? _AppBarStyles.appBarTotalHeight
-        : _AppBarStyles.appBarTotalHeight - _AppBarStyles.bannerHeight;
+        ? AppBarStyles.appBarTotalHeight
+        : AppBarStyles.appBarTotalHeight - AppBarStyles.bannerHeight;
 
     return PreferredSize(
       preferredSize: Size.fromHeight(appBarHeight),
@@ -126,25 +112,19 @@ class _HomeScreenState extends State<HomeScreen> {
               if (showBanner)
                 Container(
                   width: double.infinity,
-                  height: _AppBarStyles.bannerHeight,
+                  height: AppBarStyles.bannerHeight,
                 ),
               SafeArea(
                 child: Column(
                   children: [
                     SizedBox(
-                      height: _AppBarStyles.buttonRowHeight,
+                      height: AppBarStyles.buttonRowHeight,
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                            horizontal: _AppBarStyles.horizontalPadding),
+                            horizontal: AppBarStyles.horizontalPadding),
                         child: Row(
                           children: [
-                            Image.asset(
-                              'assets/logos/logo.png',
-                              width: 100,
-                              height: 100,
-                            ),
                             const Spacer(),
-                            // Afficher le bouton dashboard uniquement pour l'admin
                             if (isAdmin)
                               _buildCircularButton(
                                 icon: const Icon(CupertinoIcons.square_grid_2x2,
@@ -186,17 +166,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: _AppBarStyles.spaceBetweenButtonAndTitle),
+                    SizedBox(height: AppBarStyles.spaceBetweenButtonAndTitle),
                     Container(
                       width: double.infinity,
-                      height: _AppBarStyles.titleContainerHeight,
+                      height: AppBarStyles.titleContainerHeight,
                       margin: EdgeInsets.symmetric(
-                          horizontal: _AppBarStyles.horizontalPadding),
-                      padding: _AppBarStyles.titlePadding,
+                          horizontal: AppBarStyles.horizontalPadding),
+                      padding: AppBarStyles.titlePadding,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius:
-                            BorderRadius.circular(_AppBarStyles.borderRadius),
+                            BorderRadius.circular(AppBarStyles.borderRadius),
                       ),
                       child: Text.rich(
                         TextSpan(
@@ -244,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
         controller: _scrollController,
         child: Padding(
           padding: EdgeInsets.only(
-            top: _AppBarStyles.appBarTotalHeight + 20,
+            top: AppBarStyles.appBarTotalHeight + 20,
             left: 20,
             right: 20,
           ),
@@ -304,7 +284,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    // Map Firestore documents to City models
                     final cities = snapshot.data!.docs.map((doc) {
                       final data = doc.data() as Map<String, dynamic>;
                       return City.fromJson(data);
@@ -491,9 +470,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                           },
                           child: LocationCard(
+                            id: space.id,
                             title: space.name,
                             subtitle: _formatActivities(space.activities),
-                            rating: space.getAverageRating(),
                             hours: space.hours,
                             imageUrl: space.photoUrls.isNotEmpty
                                 ? space.photoUrls.first
@@ -513,269 +492,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class CommuneCard extends StatelessWidget {
-  final String name;
-  final String imageUrl;
-
-  const CommuneCard({
-    super.key,
-    required this.name,
-    required this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CommuneDetailsScreen(communeName: name),
-          ),
-        );
-      },
-      child: SizedBox(
-        width: 80,
-        height: 95,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 70,
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(color: Colors.grey[300]);
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(color: Colors.grey[300]);
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: 80,
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LocationCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final double rating;
-  final String hours;
-  final String? imageUrl;
-
-  const LocationCard({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.rating,
-    required this.hours,
-    this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image container
-          Container(
-            width: double.infinity,
-            height: 160,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-            ),
-            child: imageUrl != null
-                ? ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    child: Image.network(
-                      imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(color: Colors.grey[300]);
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(color: Colors.grey[300]);
-                      },
-                    ),
-                  )
-                : null,
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      CupertinoIcons.star,
-                      color: Color(0xFF8B5CF6),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      rating.toStringAsFixed(1),
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(width: 16),
-                    const Icon(
-                      CupertinoIcons.clock,
-                      color: Color(0xFF8B5CF6),
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      hours,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class CityCard extends StatelessWidget {
-  final String id;
-  final String name;
-
-  const CityCard({
-    super.key,
-    required this.id,
-    required this.name,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CityDetailScreen(
-              cityId: id,
-              cityName: name,
-            ),
-          ),
-        );
-      },
-      child: SizedBox(
-        width: 80,
-        height: 95,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 70,
-              decoration: BoxDecoration(
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-                color: const Color(0xFF8B5CF6),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  name.substring(0, 2).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: 80,
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-          ],
         ),
       ),
     );

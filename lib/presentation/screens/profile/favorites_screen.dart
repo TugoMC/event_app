@@ -1,5 +1,11 @@
+import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/data/models/favorite.dart';
+import 'package:event_app/data/services/favorites_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class _FavoritesStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -25,12 +31,27 @@ class FavoritesScreen extends StatefulWidget {
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
   final ScrollController _scrollController = ScrollController();
+  final FavoritesService _favoritesService = FavoritesService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isScrolled = false;
+  String? _userId;
+  Stream<List<Favorite>>? _favoritesStream;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _userId = user.uid;
+        _favoritesStream = _favoritesService.getUserFavorites(user.uid);
+      });
+    }
   }
 
   @override
@@ -152,14 +173,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     );
   }
 
-  Widget _buildAddressCard({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBackgroundColor,
-    required String label,
-    required String address,
-    required VoidCallback onDelete,
-  }) {
+  Widget _buildFavoriteCard(EventSpace eventSpace) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -170,45 +184,113 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          width: 60,
+          height: 60,
           decoration: BoxDecoration(
-            color: iconBackgroundColor,
             borderRadius: BorderRadius.circular(12),
+            image: DecorationImage(
+              image: NetworkImage(eventSpace.photoUrls.first),
+              fit: BoxFit.cover,
+            ),
           ),
-          child: Icon(icon, color: iconColor, size: 24),
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              label,
+              eventSpace.name,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey,
-                letterSpacing: 1.0,
+                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              address,
+              '${eventSpace.commune.name}, ${eventSpace.city.name}',
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Colors.black87,
+                color: Colors.grey,
               ),
             ),
           ],
         ),
         trailing: IconButton(
-          icon: Icon(
-            Icons.delete_outline,
-            color: Colors.orange[400],
+          icon: const Icon(
+            CupertinoIcons.heart_fill,
+            color: Colors.red,
             size: 20,
           ),
-          onPressed: onDelete,
+          onPressed: () => _toggleFavorite(eventSpace.id),
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                EventSpaceDetailScreen(eventSpace: eventSpace),
+          ),
         ),
       ),
+    );
+  }
+
+  Future<void> _toggleFavorite(String eventSpaceId) async {
+    if (_userId != null) {
+      await _favoritesService.toggleFavorite(_userId!, eventSpaceId);
+    }
+  }
+
+  Widget _buildFavoritesList() {
+    if (_userId == null) {
+      return const Center(
+        child: Text('Veuillez vous connecter pour voir vos favoris'),
+      );
+    }
+
+    return StreamBuilder<List<Favorite>>(
+      stream: _favoritesStream,
+      builder: (context, snapshotFavorites) {
+        if (snapshotFavorites.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (!snapshotFavorites.hasData || snapshotFavorites.data!.isEmpty) {
+          return const Center(
+            child: Text('Aucun favori pour le moment'),
+          );
+        }
+
+        final favorites = snapshotFavorites.data!
+            .where((favorite) => favorite.isActive)
+            .toList();
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: _firestore
+              .collection('event_spaces')
+              .where('id',
+                  whereIn: favorites.map((f) => f.eventSpaceId).toList())
+              .snapshots(),
+          builder: (context, snapshotSpaces) {
+            if (!snapshotSpaces.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final eventSpaces = snapshotSpaces.data!.docs
+                .map((doc) =>
+                    EventSpace.fromJson(doc.data() as Map<String, dynamic>))
+                .toList();
+
+            return ListView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: eventSpaces.length,
+              itemBuilder: (context, index) =>
+                  _buildFavoriteCard(eventSpaces[index]),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -227,31 +309,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             right: 20,
             bottom: 20,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAddressCard(
-                icon: Icons.home_outlined,
-                iconColor: Colors.blue[400]!,
-                iconBackgroundColor: Colors.blue[50]!,
-                label: 'HOME',
-                address: '2464 Royal Ln. Mesa, New Jersey 45463',
-                onDelete: () {
-                  // Gérer la suppression
-                },
-              ),
-              _buildAddressCard(
-                icon: Icons.work_outline,
-                iconColor: Colors.purple[400]!,
-                iconBackgroundColor: Colors.purple[50]!,
-                label: 'WORK',
-                address: '3891 Ranchview Dr. Richardson, California 62639',
-                onDelete: () {
-                  // Gérer la suppression
-                },
-              ),
-            ],
-          ),
+          child: _buildFavoritesList(),
         ),
       ),
     );

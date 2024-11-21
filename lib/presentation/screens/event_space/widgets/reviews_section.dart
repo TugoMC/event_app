@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:event_app/data/models/review.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class ReviewsSection extends StatelessWidget {
@@ -43,7 +44,7 @@ class ReviewsSection extends StatelessWidget {
             if (reviews.isEmpty) {
               return const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('Aucune review disponible pour cet espace.'),
+                child: Text('Aucun avis disponible pour le moment.'),
               );
             }
 
@@ -60,16 +61,40 @@ class ReviewsSection extends StatelessWidget {
                         ? emailSnapshot.data!.split('@').first
                         : 'Utilisateur';
 
-                    return ListTile(
-                      title: Text(review.comment),
-                      subtitle: Column(
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                username,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                _formatDate(review.createdAt),
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
                           _buildStarRating(review.rating),
-                          Text(username),
+                          const SizedBox(height: 4),
+                          Text(
+                            review.comment,
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                            ),
+                          ),
                         ],
                       ),
-                      trailing: Text(_formatDate(review.createdAt)),
                     );
                   },
                 );
@@ -85,8 +110,8 @@ class ReviewsSection extends StatelessWidget {
     return Row(
       children: List.generate(5, (index) {
         return Icon(
-          index < rating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
+          index < rating ? CupertinoIcons.star_fill : CupertinoIcons.star,
+          color: const Color(0xFF8773F8),
           size: 20,
         );
       }),

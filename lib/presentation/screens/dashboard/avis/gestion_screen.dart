@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReviewsStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -16,15 +17,16 @@ class ReviewsStyles {
   static const double scrollThreshold = 80.0;
 }
 
-class ReviewsManagementScreen extends StatefulWidget {
-  const ReviewsManagementScreen({super.key});
+class EventSpacesDashboardScreen extends StatefulWidget {
+  const EventSpacesDashboardScreen({super.key});
 
   @override
-  State<ReviewsManagementScreen> createState() =>
-      _ReviewsManagementScreenState();
+  State<EventSpacesDashboardScreen> createState() =>
+      _EventSpacesDashboardScreenState();
 }
 
-class _ReviewsManagementScreenState extends State<ReviewsManagementScreen> {
+class _EventSpacesDashboardScreenState
+    extends State<EventSpacesDashboardScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
@@ -69,45 +71,6 @@ class _ReviewsManagementScreenState extends State<ReviewsManagementScreen> {
         icon: icon,
         onPressed: onPressed,
         padding: EdgeInsets.zero,
-      ),
-    );
-  }
-
-  Widget _buildMenuItem({
-    required Icon icon,
-    required String title,
-    required VoidCallback onTap,
-    bool showArrow = true,
-    Color? textColor,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: icon,
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: textColor ?? Colors.black,
-          ),
-        ),
-        trailing:
-            showArrow ? const Icon(Icons.arrow_forward_ios, size: 16) : null,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }
@@ -197,63 +160,62 @@ class _ReviewsManagementScreenState extends State<ReviewsManagementScreen> {
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: ReviewsStyles.appBarTotalHeight + 20,
-            left: 20,
-            right: 20,
-            bottom: 20,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Center(
-                child: Text(
-                  'Gestion des Avis',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
+      body: StreamBuilder<int>(
+        stream: _fetchTotalReviews(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(child: Text('Aucune donnée disponible'));
+          }
+
+          return SingleChildScrollView(
+            controller: _scrollController,
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: ReviewsStyles.appBarTotalHeight + 20,
+                left: 20,
+                right: 20,
+                bottom: 20,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Tableau de Bord',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 32),
+                  Center(
+                    child: Text(
+                      'Total des Avis: ${snapshot.data}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.plus_circle_fill,
-                    color: Colors.green[400]),
-                title: 'Ajouter un avis',
-                onTap: () {
-                  // Navigation vers l'ajout d'avis
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.list_bullet, color: Colors.blue[400]),
-                title: 'Tous les avis',
-                onTap: () {
-                  // Navigation vers la liste des avis
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.pencil_circle_fill,
-                    color: Colors.orange[400]),
-                title: 'Modifier un avis',
-                onTap: () {
-                  // Navigation vers la modification des avis
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.trash_circle_fill,
-                    color: Colors.red[400]),
-                title: 'Supprimer un avis',
-                onTap: () {
-                  // Navigation vers la suppression des avis
-                },
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
+  }
+
+  Stream<int> _fetchTotalReviews() {
+    return FirebaseFirestore.instance
+        .collection('reviews')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
   }
 }
