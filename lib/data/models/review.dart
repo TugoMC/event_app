@@ -1,4 +1,6 @@
 // lib/data/models/review.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Review {
   final String id;
   final String userId;
@@ -82,9 +84,13 @@ class Review {
         eventSpaceId: json['eventSpaceId'],
         rating: json['rating'],
         comment: json['comment'],
-        createdAt: DateTime.parse(json['createdAt']),
-        updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'])
-            : null,
+        createdAt: (json['createdAt'] is Timestamp)
+            ? (json['createdAt'] as Timestamp).toDate()
+            : DateTime.parse(json['createdAt']),
+        updatedAt: json['updatedAt'] is Timestamp
+            ? (json['updatedAt'] as Timestamp).toDate()
+            : (json['updatedAt'] != null
+                ? DateTime.parse(json['updatedAt'])
+                : null),
       );
 }
