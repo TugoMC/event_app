@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/services/favorites_service.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/activities_section.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/app_bar_styles.dart';
@@ -8,7 +7,7 @@ import 'package:event_app/presentation/screens/event_space/widgets/image_carouse
 import 'package:event_app/presentation/screens/event_space/widgets/review_modal.dart';
 import 'package:event_app/presentation/screens/event_space/widgets/reviews_section.dart';
 import 'package:event_app/data/models/event_space.dart';
-import 'package:event_app/data/models/favorite.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -27,7 +26,6 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
   final FavoritesService _favoritesService = FavoritesService();
   bool _isFavorited = false;
   bool _isLoading = true;
-  late Stream<List<Favorite>> _favoritesStream;
   String? _userId;
 
   @override
@@ -42,7 +40,6 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
       setState(() {
         _userId = user.uid;
       });
-      _favoritesStream = _favoritesService.getUserFavorites(_userId!);
       await _checkInitialFavoriteStatus();
     }
     setState(() {

@@ -2,26 +2,101 @@ import 'package:event_app/presentation/screens/auth/auth_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
-import 'presentation/screens/home/home_screen.dart'; // Remplacez par l'écran principal réel
+import 'presentation/screens/home/home_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
+
+// Ajout du service
+class UserCollectionService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> addUserToCollection(User user) async {
+    await _firestore.collection('users').doc(user.uid).set({
+      'userId': user.uid,
+      'email': user.email,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<Map<String, dynamic>?> getUserById(String userId) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        return userDoc.data() as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      print('Erreur lors de la récupération de l\'utilisateur : $e');
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    try {
+      QuerySnapshot querySnapshot = await _firestore.collection('users').get();
+      return querySnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
+    } catch (e) {
+      print('Erreur lors de la récupération des utilisateurs : $e');
+      return [];
+    }
+  }
+
+  Future<void> updateUserInfo(
+      String userId, Map<String, dynamic> updatedData) async {
+    try {
+      await _firestore.collection('users').doc(userId).update(updatedData);
+    } catch (e) {
+      print('Erreur lors de la mise à jour de l\'utilisateur : $e');
+    }
+  }
+
+  Future<bool> userExists(String userId) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(userId).get();
+      return userDoc.exists;
+    } catch (e) {
+      print(
+          'Erreur lors de la vérification de l\'existence de l\'utilisateur : $e');
+      return false;
+    }
+  }
+}
+
+// Global instance du service
+final userCollectionService = UserCollectionService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    // Initialisation de Firebase avec les options manuellement définies
     await Firebase.initializeApp(
       options: const FirebaseOptions(
-        apiKey: "AIzaSyC5m9Iu29cLJj-REdNpmNJ4zrhrk4m099k", // Clé API
-        appId:
-            "1:782808634409:android:d43ff62177296db3997838", // ID de l'application
-        messagingSenderId: "782808634409", // ID du destinataire de message
-        projectId: "event-app-14690", // ID du projet
-        storageBucket: "event-app-14690.firebasestorage.app", // Storage bucket
-        authDomain: "event-app-14690.firebaseapp.com", // Auth domain
-        measurementId: "G-XYZ1234567", // ID de mesure (optionnel)
+        apiKey: "AIzaSyC5m9Iu29cLJj-REdNpmNJ4zrhrk4m099k",
+        appId: "1:782808634409:android:d43ff62177296db3997838",
+        messagingSenderId: "782808634409",
+        projectId: "event-app-14690",
+        storageBucket: "event-app-14690.firebasestorage.app",
+        authDomain: "event-app-14690.firebaseapp.com",
+        measurementId: "G-XYZ1234567",
       ),
     );
+
+    // Configurer l'écouteur d'authentification
+    FirebaseAuth.instance.authStateChanges().listen((User? user) {
+      if (user != null) {
+        // Vérifier si l'utilisateur existe déjà dans Firestore
+        userCollectionService.userExists(user.uid).then((exists) {
+          if (!exists) {
+            // Ajouter l'utilisateur à Firestore s'il n'existe pas
+            userCollectionService.addUserToCollection(user);
+          }
+        });
+      }
+    });
   } catch (e) {
     print('Firebase initialization error: $e');
   }
@@ -40,7 +115,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primaryColor: Colors.white,
         scaffoldBackgroundColor: Colors.white,
-        fontFamily: 'Sen', // Définir Sen comme police par défaut
+        fontFamily: 'Sen',
         textTheme: const TextTheme(
           displayLarge: TextStyle(fontFamily: 'Sen'),
           displayMedium: TextStyle(fontFamily: 'Sen'),
@@ -94,10 +169,6 @@ class _EntryPointState extends State<EntryPoint> {
 
   @override
   Widget build(BuildContext context) {
-    // Priority order:
-    // 1. First time user (show onboarding)
-    // 2. Not authenticated (show login)
-    // 3. Authenticated (show home screen)
     if (_isFirstTime) {
       return const OnboardingScreen();
     } else if (_currentUser == null) {

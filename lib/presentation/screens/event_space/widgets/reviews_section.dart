@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:event_app/data/models/review.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -54,12 +53,17 @@ class ReviewsSection extends StatelessWidget {
               itemCount: reviews.length,
               itemBuilder: (context, index) {
                 final review = reviews[index];
-                return FutureBuilder<String>(
-                  future: _fetchUserEmail(review.userId),
-                  builder: (context, emailSnapshot) {
-                    final username = emailSnapshot.data != null
-                        ? emailSnapshot.data!.split('@').first
-                        : 'Utilisateur';
+                return FutureBuilder<Map<String, dynamic>?>(
+                  future: _fetchUserData(review.userId),
+                  builder: (context, userSnapshot) {
+                    String displayName;
+                    if (userSnapshot.hasData && userSnapshot.data != null) {
+                      // Utiliser l'email de l'utilisateur depuis Firestore
+                      final email = userSnapshot.data!['email'] as String;
+                      displayName = email.split('@').first;
+                    } else {
+                      displayName = 'Utilisateur';
+                    }
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(
@@ -71,7 +75,7 @@ class ReviewsSection extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                username,
+                                displayName,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -118,9 +122,21 @@ class ReviewsSection extends StatelessWidget {
     );
   }
 
-  Future<String> _fetchUserEmail(String userId) async {
-    final user = FirebaseAuth.instance.currentUser;
-    return user?.email ?? 'Utilisateur';
+  Future<Map<String, dynamic>?> _fetchUserData(String userId) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        return userDoc.data();
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching user data: $e');
+      return null;
+    }
   }
 
   String _formatDate(DateTime date) {

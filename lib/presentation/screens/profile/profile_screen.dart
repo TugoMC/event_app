@@ -1,3 +1,4 @@
+import 'package:event_app/presentation/screens/auth/auth_screen.dart';
 import 'package:event_app/presentation/screens/profile/favorites_screen.dart';
 import 'package:event_app/presentation/screens/profile/personal_info_screen.dart';
 import 'package:event_app/presentation/screens/profile/user_review_screen.dart';
@@ -143,10 +144,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: TextButton(
                           onPressed: () async {
-                            Navigator.of(context).pop();
+                            Navigator.of(context)
+                                .pop(); // Ferme la boîte de dialogue
                             await FirebaseAuth.instance.signOut();
                             if (context.mounted) {
-                              Navigator.of(context).pop();
+                              // Remplace toute la pile de navigation par LoginScreen
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (context) => LoginScreen(),
+                                ),
+                                (route) =>
+                                    false, // Supprime toutes les routes précédentes
+                              );
                             }
                           },
                           child: const Text(
