@@ -3,7 +3,10 @@ import 'package:event_app/data/models/activity.dart';
 import 'package:event_app/data/models/city.dart';
 import 'package:event_app/data/models/commune.dart';
 import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
+import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:event_app/presentation/screens/search/activity_filter.dart';
+import 'package:event_app/presentation/screens/villes/city_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -57,6 +60,8 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
+    // Initialiser les EventSpaces dès le début
+    _updateFilteredEventSpaces();
   }
 
   @override
@@ -78,17 +83,24 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  // Nouvelle méthode pour mettre à jour les EventSpaces filtrés
+  void _updateFilteredEventSpaces() {
+    setState(() {
+      _filteredEventSpaces = EventSpaceFilter.filterEventSpaces(
+        eventSpaces: widget.allEventSpaces ?? [],
+        searchQuery: _searchController.text,
+        selectedActivities:
+            _selectedActivities.isNotEmpty ? _selectedActivities : null,
+      );
+    });
+  }
+
   void _onSearchChanged() {
     final query = _searchController.text;
 
     setState(() {
-      // Utiliser le nouveau filtre pour les espaces événementiels
-      _filteredEventSpaces = EventSpaceFilter.filterEventSpaces(
-        eventSpaces: widget.allEventSpaces ?? [],
-        searchQuery: query,
-        selectedActivities:
-            _selectedActivities.isNotEmpty ? _selectedActivities : null,
-      );
+      // Mettre à jour les EventSpaces filtrés
+      _updateFilteredEventSpaces();
 
       // Filtrer les villes et communes uniquement si une recherche textuelle est active
       if (query.isNotEmpty) {
@@ -278,11 +290,30 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchResults() {
+    final bool hasSearchResults = _searchController.text.isNotEmpty &&
+        (_filteredCities?.isNotEmpty == true ||
+            _filteredCommunes?.isNotEmpty == true ||
+            _filteredEventSpaces?.isNotEmpty == true);
+
+    final bool hasFilterResults = _selectedActivities.isNotEmpty &&
+        _filteredEventSpaces?.isNotEmpty == true;
+
+    if (!hasSearchResults && !hasFilterResults) {
+      return const Center(
+        child: Text(
+          'Aucun résultat trouvé',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Section Villes
-        if (_filteredCities != null && _filteredCities!.isNotEmpty) ...[
+        // Cities section
+        if (_searchController.text.isNotEmpty &&
+            _filteredCities != null &&
+            _filteredCities!.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.only(top: 20, bottom: 12),
             child: Text(
@@ -293,13 +324,23 @@ class _SearchScreenState extends State<SearchScreen> {
           ..._filteredCities!.map((city) => ListTile(
                 title: Text(city.name),
                 onTap: () {
-                  // Navigation vers la ville
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CityDetailScreen(
+                        cityId: city.id,
+                        cityName: city.name,
+                      ),
+                    ),
+                  );
                 },
               )),
         ],
 
-        // Section Communes
-        if (_filteredCommunes != null && _filteredCommunes!.isNotEmpty) ...[
+        // Communes section
+        if (_searchController.text.isNotEmpty &&
+            _filteredCommunes != null &&
+            _filteredCommunes!.isNotEmpty) ...[
           const Padding(
             padding: EdgeInsets.only(top: 20, bottom: 12),
             child: Text(
@@ -307,50 +348,62 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
-          ..._filteredCommunes!.map((commune) => Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          image: NetworkImage(commune.photoUrl),
-                          fit: BoxFit.cover,
+          ..._filteredCommunes!.map((commune) => GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CommuneDetailsScreen(
+                        communeName: commune.name,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: NetworkImage(commune.photoUrl),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            commune.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              commune.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            commune.city?.name ?? '',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey,
+                            const SizedBox(height: 4),
+                            Text(
+                              commune.city?.name ?? '',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               )),
         ],
 
-        // Section Espaces événementiels
+        // Event spaces section
         if (_filteredEventSpaces != null &&
             _filteredEventSpaces!.isNotEmpty) ...[
           const Padding(
@@ -360,49 +413,61 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
-          ..._filteredEventSpaces!.map((space) => Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: DecorationImage(
-                          image: NetworkImage(space.photoUrls.first),
-                          fit: BoxFit.cover,
+          ..._filteredEventSpaces!.map((space) => GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EventSpaceDetailScreen(
+                        eventSpace: space,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: NetworkImage(space.photoUrls.first),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            space.name,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(Icons.star,
-                                  size: 16, color: Colors.purple[400]),
-                              const SizedBox(width: 4),
-                              Text(
-                                space.getAverageRating().toStringAsFixed(1),
-                                style: const TextStyle(fontSize: 14),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              space.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
                               ),
-                            ],
-                          ),
-                        ],
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.star,
+                                    size: 16, color: Colors.purple[400]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  space.getAverageRating().toStringAsFixed(1),
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               )),
         ],
@@ -412,6 +477,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool shouldShowResults =
+        _searchController.text.isNotEmpty || _selectedActivities.isNotEmpty;
+
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
@@ -425,9 +493,7 @@ class _SearchScreenState extends State<SearchScreen> {
             right: 20,
             bottom: 20,
           ),
-          child: _searchController.text.isEmpty
-              ? Container() // Si la recherche est vide, on n'affiche rien
-              : _buildSearchResults(),
+          child: shouldShowResults ? _buildSearchResults() : Container(),
         ),
       ),
     );

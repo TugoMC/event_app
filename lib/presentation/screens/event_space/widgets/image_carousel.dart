@@ -53,7 +53,7 @@ class _ImageCarouselState extends State<ImageCarousel> {
                     image: NetworkImage(url),
                     fit: BoxFit.cover,
                   ),
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(16),
                 ),
               );
             }).toList(),

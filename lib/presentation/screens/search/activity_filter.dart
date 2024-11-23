@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:event_app/data/models/activity.dart';
 import 'package:event_app/data/models/event_space.dart';
 
@@ -42,6 +43,27 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
     setState(() {});
   }
 
+  Widget _buildCircularButton({
+    required Widget icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: 46,
+      height: 46,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: IconButton(
+        icon: icon,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -53,9 +75,9 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -63,18 +85,17 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                   'Filtrer par activité',
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
+                _buildCircularButton(
+                  icon: const Icon(CupertinoIcons.xmark, color: Colors.black),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
           const Divider(height: 1),
-          // Content
           if (_availableActivities.isEmpty)
             const Expanded(
               child: Center(
@@ -82,7 +103,7 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                   'Aucune activité disponible',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey,
+                    color: Color(0xFFA0A5BA),
                   ),
                 ),
               ),
@@ -91,10 +112,11 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
             Expanded(
               child: GridView.count(
                 crossAxisCount: 3,
-                padding: const EdgeInsets.all(16),
-                mainAxisSpacing: 12, // Reduced from 16 to prevent overflow
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+                mainAxisSpacing: 8,
                 crossAxisSpacing: 16,
-                childAspectRatio: 0.75, // Added to control item height
+                // Ajusté pour éviter l'overflow
+                childAspectRatio: 0.82,
                 children: _availableActivities.map((activity) {
                   final isSelected = _selectedActivities.contains(activity);
                   final count = _activityCounts[activity.type] ?? 0;
@@ -107,28 +129,35 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                         } else {
                           _selectedActivities.add(activity);
                         }
-                        widget.onFilterChanged(_selectedActivities.toList());
                       });
                     },
                     child: Column(
-                      mainAxisSize:
-                          MainAxisSize.min, // Added to prevent expansion
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Stack(
                           alignment: Alignment.center,
                           children: [
-                            CircleAvatar(
-                              radius: 30, // Slightly reduced from 32
-                              backgroundColor: isSelected
-                                  ? const Color(0xFF8773F8)
-                                  : const Color(0xFF8773F8).withOpacity(0.2),
+                            Container(
+                              width: 65,
+                              height: 65,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? const Color(0xFF8773F8)
+                                    : const Color(0xFF8773F8).withOpacity(0.1),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? const Color(0xFF8773F8)
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
                               child: Icon(
                                 activity.icon,
                                 color: isSelected
                                     ? Colors.white
                                     : const Color(0xFF8773F8),
-                                size: 30, // Slightly reduced from 32
+                                size: 30,
                               ),
                             ),
                             if (isSelected)
@@ -137,50 +166,59 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                                 bottom: 0,
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(0xFF8773F8),
+                                      width: 2,
+                                    ),
                                   ),
                                   child: const Icon(
-                                    Icons.check_circle,
+                                    Icons.check,
                                     color: Color(0xFF8773F8),
-                                    size: 18, // Slightly reduced from 20
+                                    size: 14,
                                   ),
                                 ),
                               ),
                           ],
                         ),
-                        const SizedBox(height: 6), // Reduced from 8
+                        const SizedBox(height: 6),
                         Text(
                           activity.type,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13,
                             fontWeight: isSelected
-                                ? FontWeight.bold
+                                ? FontWeight.w600
                                 : FontWeight.normal,
                             color: isSelected
                                 ? const Color(0xFF8773F8)
                                 : Colors.black,
                           ),
                           textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? const Color(0xFF8773F8).withOpacity(0.1)
-                                : Colors.grey[200],
+                                : const Color(0xFFF6F6F6),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             count.toString(),
                             style: TextStyle(
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                               color: isSelected
                                   ? const Color(0xFF8773F8)
-                                  : Colors.grey[600],
+                                  : const Color(0xFFA0A5BA),
                             ),
                           ),
                         ),
@@ -190,11 +228,9 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                 }).toList(),
               ),
             ),
-          // Bottom buttons
           SafeArea(
-            // Added SafeArea to prevent overlap with system UI
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(24.0),
               child: Row(
                 children: [
                   Expanded(
@@ -207,15 +243,30 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                                 widget.onFilterChanged([]);
                               });
                             },
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF8773F8),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: const BorderSide(color: Color(0xFF8773F8)),
+                        ),
+                      ),
                       child: const Text('Réinitialiser'),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: FilledButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        widget.onFilterChanged(_selectedActivities.toList());
+                        Navigator.pop(context);
+                      },
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF8773F8),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
                       child: const Text('Voir les résultats'),
                     ),
