@@ -19,9 +19,7 @@ class Activity {
 
   factory Activity.fromJson(Map<String, dynamic> json, [String? documentId]) =>
       Activity(
-        id: documentId ??
-            json['id'] ??
-            '', // Utiliser documentId s'il est fourni
+        id: documentId ?? json['id'] ?? '',
         type: json['type'] as String,
         icon: IconData(
           json['icon'] as int,
@@ -44,8 +42,13 @@ class Activity {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Activity && runtimeType == other.runtimeType && id == other.id;
+      other is Activity &&
+          runtimeType == other.runtimeType &&
+          type ==
+              other
+                  .type; // Modification ici pour comparer par type au lieu de l'id
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode =>
+      type.hashCode; // Modification ici pour utiliser type au lieu de l'id
 }

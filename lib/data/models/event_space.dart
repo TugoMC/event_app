@@ -1,6 +1,4 @@
-// lib/data/models/event_space.dart
-import 'package:event_app/data/models/activity.dart';
-
+import 'activity.dart';
 import 'city.dart';
 import 'commune.dart';
 import 'favorite.dart';
@@ -66,20 +64,6 @@ class EventSpace {
       throw ArgumentError('Au moins une URL de photo est requise');
     }
 
-    /// Vérifie si un utilisateur a déjà laissé une review pour cet espace d'événement
-    bool hasUserAlreadyReviewed(String userId) {
-      return reviews.any((review) => review.userId == userId);
-    }
-
-    /// Ajoute une nouvelle review en vérifiant qu'un utilisateur n'a pas déjà reviewé
-    void addReview(Review newReview) {
-      if (hasUserAlreadyReviewed(newReview.userId)) {
-        throw ArgumentError(
-            'Un utilisateur ne peut laisser qu\'une seule review par espace d\'événement');
-      }
-      reviews.add(newReview);
-    }
-
     // Validation des URLs des photos
     for (final photoUrl in photoUrls) {
       final uri = Uri.tryParse(photoUrl);
@@ -98,6 +82,20 @@ class EventSpace {
     }
   }
 
+  /// Vérifie si un utilisateur a déjà laissé une review pour cet espace d'événement
+  bool hasUserAlreadyReviewed(String userId) {
+    return reviews.any((review) => review.userId == userId);
+  }
+
+  /// Ajoute une nouvelle review en vérifiant qu'un utilisateur n'a pas déjà reviewé
+  void addReview(Review newReview) {
+    if (hasUserAlreadyReviewed(newReview.userId)) {
+      throw ArgumentError(
+          'Un utilisateur ne peut laisser qu\'une seule review par espace d\'événement');
+    }
+    reviews.add(newReview);
+  }
+
   double getAverageRating() {
     if (reviews.isEmpty) return 0;
     return reviews.map((r) => r.rating).reduce((a, b) => a + b) /
@@ -107,6 +105,37 @@ class EventSpace {
   bool isFavoritedBy(String userId, List<Favorite> favorites) {
     return favorites
         .any((f) => f.eventSpaceId == id && f.userId == userId && f.isActive);
+  }
+
+  /// Vérifie si cet EventSpace contient toutes les activités spécifiées
+  bool hasAllActivities(List<Activity> selectedActivities) {
+    return selectedActivities.every((selectedActivity) =>
+        activities.any((activity) => activity.type == selectedActivity.type));
+  }
+
+  /// Récupère la liste unique des activités utilisées dans les EventSpaces
+  static List<Activity> getUsedActivities(List<EventSpace> eventSpaces) {
+    final Set<Activity> uniqueActivities = {};
+
+    for (var eventSpace in eventSpaces) {
+      uniqueActivities.addAll(eventSpace.activities);
+    }
+
+    return uniqueActivities.toList();
+  }
+
+  /// Filtre les EventSpaces en fonction des activités sélectionnées
+  static List<EventSpace> filterByActivities(
+    List<EventSpace> eventSpaces,
+    List<Activity> selectedActivities,
+  ) {
+    if (selectedActivities.isEmpty) {
+      return eventSpaces;
+    }
+
+    return eventSpaces
+        .where((eventSpace) => eventSpace.hasAllActivities(selectedActivities))
+        .toList();
   }
 
   EventSpace copyWith({
@@ -166,7 +195,6 @@ class EventSpace {
       };
 
   factory EventSpace.fromJson(Map<String, dynamic> json) {
-    // Conversion sécurisée du prix
     double parsePrice(dynamic price) {
       if (price is int) {
         return price.toDouble();

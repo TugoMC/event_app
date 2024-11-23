@@ -10,6 +10,7 @@ import 'package:event_app/presentation/screens/home/widgets/app_bar_styles.dart'
 import 'package:event_app/presentation/screens/home/widgets/city_card.dart';
 import 'package:event_app/presentation/screens/home/widgets/commune_card.dart';
 import 'package:event_app/presentation/screens/home/widgets/location_card.dart';
+import 'package:event_app/presentation/screens/home/widgets/shimmer_loading.dart';
 import 'package:event_app/presentation/screens/profile/profile_screen.dart';
 import 'package:event_app/presentation/screens/search/search.dart';
 import 'package:event_app/presentation/screens/villes/all_cities.dart';
@@ -141,12 +142,103 @@ class _HomeScreenState extends State<HomeScreen> {
                             _buildCircularButton(
                               icon: const Icon(CupertinoIcons.search,
                                   color: Colors.black),
-                              onPressed: () {
+                              onPressed: () async {
+                                // Récupérer les villes
+                                final citiesSnapshot =
+                                    await firestore.collection('cities').get();
+                                final cities = citiesSnapshot.docs
+                                    .map((doc) => City.fromJson(
+                                        doc.data() as Map<String, dynamic>))
+                                    .toList();
+
+                                // Récupérer les communes
+                                final communesSnapshot = await firestore
+                                    .collection('communes')
+                                    .get();
+                                final communes = communesSnapshot.docs
+                                    .map((doc) => Commune.fromJson(
+                                        doc.data() as Map<String, dynamic>))
+                                    .toList();
+
+                                // Récupérer les espaces événementiels
+                                final eventSpacesSnapshot = await firestore
+                                    .collection('event_spaces')
+                                    .where('isActive', isEqualTo: true)
+                                    .get();
+                                final eventSpaces =
+                                    eventSpacesSnapshot.docs.map((doc) {
+                                  final data = doc.data();
+                                  return EventSpace(
+                                    id: doc.id,
+                                    name: data['name'] as String,
+                                    description: data['description'] as String,
+                                    commune: Commune.fromJson(data['commune']
+                                        as Map<String, dynamic>),
+                                    city: City.fromJson(
+                                        data['city'] as Map<String, dynamic>),
+                                    activities: (data['activities'] as List)
+                                        .map((activity) => Activity.fromJson(
+                                            activity as Map<String, dynamic>))
+                                        .toList(),
+                                    reviews: (data['reviews'] as List)
+                                        .map((review) => Review.fromJson(
+                                            review as Map<String, dynamic>))
+                                        .toList(),
+                                    hours: data['hours'] as String,
+                                    price: (data['price'] as num).toDouble(),
+                                    phoneNumber: data['phoneNumber'] as String,
+                                    photoUrls:
+                                        List<String>.from(data['photoUrls']),
+                                    location: data['location'] as String,
+                                    createdAt: DateTime.parse(
+                                        data['createdAt'] as String),
+                                    updatedAt: data['updatedAt'] != null
+                                        ? DateTime.parse(
+                                            data['updatedAt'] as String)
+                                        : null,
+                                    isActive: data['isActive'] as bool? ?? true,
+                                    createdBy: data['createdBy'] as String,
+                                  );
+                                }).toList();
+
+                                // Récupérer les activités
+                                final activitiesSnapshot = await firestore
+                                    .collection('activities')
+                                    .get();
+                                final activities = activitiesSnapshot.docs
+                                    .map((doc) => Activity.fromJson(
+                                        doc.data() as Map<String, dynamic>,
+                                        doc.id))
+                                    .toList();
+
+                                // Afficher un indicateur de chargement pendant la récupération des données
+                                if (!mounted) return;
+
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext context) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  },
+                                );
+
+                                // Navigation vers l'écran de recherche
+                                if (!mounted) return;
+
+                                Navigator.pop(
+                                    context); // Fermer le dialogue de chargement
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) =>
-                                          const SearchScreen()),
+                                    builder: (context) => SearchScreen(
+                                      allCities: cities,
+                                      allCommunes: communes,
+                                      allEventSpaces: eventSpaces,
+                                      allActivities: activities,
+                                    ),
+                                  ),
                                 );
                               },
                             ),
@@ -281,7 +373,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
+                      return ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 5, // Nombre d'éléments shimmer à afficher
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 12),
+                        itemBuilder: (context, index) =>
+                            const CityCardShimmer(),
+                      );
                     }
 
                     final cities = snapshot.data!.docs.map((doc) {
@@ -364,7 +464,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     }
 
                     if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
+                      return ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 5, // Nombre d'éléments shimmer à afficher
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(width: 12),
+                        itemBuilder: (context, index) =>
+                            const CommuneCardShimmer(),
+                      );
                     }
 
                     final communes = snapshot.data!.docs.map((doc) {
@@ -413,7 +521,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   if (!snapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Column(
+                      children: List.generate(
+                        3, // Nombre d'éléments shimmer à afficher
+                        (index) => const LocationCardShimmer(),
+                      ),
+                    );
                   }
 
                   try {

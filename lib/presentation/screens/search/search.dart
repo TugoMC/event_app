@@ -1,8 +1,14 @@
+import 'package:event_app/data/filters/event_space_filter.dart';
+import 'package:event_app/data/models/activity.dart';
+import 'package:event_app/data/models/city.dart';
+import 'package:event_app/data/models/commune.dart';
+import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/presentation/screens/search/activity_filter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-// Constantes de style réutilisées de AllCommunesScreen
+// Styles constants
 class _AppBarStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
@@ -19,7 +25,18 @@ class _AppBarStyles {
 }
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final List<City>? allCities;
+  final List<Commune>? allCommunes;
+  final List<EventSpace>? allEventSpaces;
+  final List<Activity>? allActivities;
+
+  const SearchScreen({
+    super.key,
+    this.allCities,
+    this.allCommunes,
+    this.allEventSpaces,
+    this.allActivities,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -29,33 +46,24 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  final List<Activity> _selectedActivities = [];
 
-  final List<String> recentKeywords = [
-    'Burger',
-    'Sandwich',
-    'Pizza',
-    'Sanwich'
-  ];
-
-  final List<Map<String, dynamic>> searchResults = [
-    {'name': 'Pansi Restaurant', 'rating': 4.7},
-    {'name': 'American Spicy Burger Shop', 'rating': 4.3},
-    {'name': 'Cafenio Coffee Club', 'rating': 4.0},
-    {'name': 'Pansi Restaurant', 'rating': 4.7},
-    {'name': 'American Spicy Burger Shop', 'rating': 4.3},
-    {'name': 'Cafenio Coffee Club', 'rating': 4.0},
-  ];
+  List<City>? _filteredCities;
+  List<Commune>? _filteredCommunes;
+  List<EventSpace>? _filteredEventSpaces;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -68,6 +76,36 @@ class _SearchScreenState extends State<SearchScreen> {
         _isScrolled) {
       setState(() => _isScrolled = false);
     }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text;
+
+    setState(() {
+      // Utiliser le nouveau filtre pour les espaces événementiels
+      _filteredEventSpaces = EventSpaceFilter.filterEventSpaces(
+        eventSpaces: widget.allEventSpaces ?? [],
+        searchQuery: query,
+        selectedActivities:
+            _selectedActivities.isNotEmpty ? _selectedActivities : null,
+      );
+
+      // Filtrer les villes et communes uniquement si une recherche textuelle est active
+      if (query.isNotEmpty) {
+        _filteredCities = widget.allCities
+            ?.where(
+                (city) => city.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+
+        _filteredCommunes = widget.allCommunes
+            ?.where((commune) =>
+                commune.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      } else {
+        _filteredCities = null;
+        _filteredCommunes = null;
+      }
+    });
   }
 
   Widget _buildCircularButton({
@@ -137,10 +175,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         child: Row(
                           children: [
                             _buildCircularButton(
-                              icon: const Icon(
-                                CupertinoIcons.back,
-                                color: Colors.black,
-                              ),
+                              icon: const Icon(CupertinoIcons.back,
+                                  color: Colors.black),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
@@ -152,7 +188,30 @@ class _SearchScreenState extends State<SearchScreen> {
                                 size: 24.0,
                               ),
                               onPressed: () {
-                                // Filtre
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => ActivityFilterModal(
+                                    initialSelectedActivities:
+                                        _selectedActivities,
+                                    eventSpaces: widget.allEventSpaces ??
+                                        [], // Passer les EventSpaces
+                                    onFilterChanged: (activities) {
+                                      setState(() {
+                                        _selectedActivities.clear();
+                                        _selectedActivities.addAll(activities);
+                                        // Mettre à jour les EventSpaces filtrés
+                                        _filteredEventSpaces = widget
+                                            .allEventSpaces
+                                            ?.where((space) {
+                                          return space
+                                              .hasAllActivities(activities);
+                                        }).toList();
+                                      });
+                                    },
+                                  ),
+                                );
                               },
                             ),
                           ],
@@ -173,32 +232,23 @@ class _SearchScreenState extends State<SearchScreen> {
                         border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: Center(
-                        // Ajout du Center ici
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment
-                              .center, // Centrage vertical des éléments de la Row
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Icon(CupertinoIcons.search,
+                            const Icon(CupertinoIcons.search,
                                 color: Color(0xFFA0A5BA), size: 24),
                             const SizedBox(width: 12),
                             Expanded(
                               child: TextField(
                                 controller: _searchController,
                                 autofocus: true,
-                                style: const TextStyle(
-                                  height:
-                                      1.0, // Ajustement de la hauteur de ligne
-                                ),
+                                style: const TextStyle(height: 1.0),
                                 decoration: const InputDecoration(
                                   hintText: 'Rechercher',
                                   border: InputBorder.none,
                                   contentPadding: EdgeInsets.zero,
-                                  isDense:
-                                      true, // Rend le TextField plus compact
+                                  isDense: true,
                                 ),
-                                onChanged: (value) {
-                                  setState(() {});
-                                },
                               ),
                             ),
                             if (_searchController.text.isNotEmpty)
@@ -227,6 +277,139 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _buildSearchResults() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section Villes
+        if (_filteredCities != null && _filteredCities!.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.only(top: 20, bottom: 12),
+            child: Text(
+              'Villes',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ..._filteredCities!.map((city) => ListTile(
+                title: Text(city.name),
+                onTap: () {
+                  // Navigation vers la ville
+                },
+              )),
+        ],
+
+        // Section Communes
+        if (_filteredCommunes != null && _filteredCommunes!.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.only(top: 20, bottom: 12),
+            child: Text(
+              'Communes',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ..._filteredCommunes!.map((commune) => Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(commune.photoUrl),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            commune.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            commune.city?.name ?? '',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+
+        // Section Espaces événementiels
+        if (_filteredEventSpaces != null &&
+            _filteredEventSpaces!.isNotEmpty) ...[
+          const Padding(
+            padding: EdgeInsets.only(top: 20, bottom: 12),
+            child: Text(
+              'Espaces événementiels',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ..._filteredEventSpaces!.map((space) => Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(
+                          image: NetworkImage(space.photoUrls.first),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            space.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.star,
+                                  size: 16, color: Colors.purple[400]),
+                              const SizedBox(width: 4),
+                              Text(
+                                space.getAverageRating().toStringAsFixed(1),
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -242,90 +425,9 @@ class _SearchScreenState extends State<SearchScreen> {
             right: 20,
             bottom: 20,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_searchController.text.isEmpty) ...[
-                const Text(
-                  'Recent Keywords',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: recentKeywords.map((keyword) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Text(
-                        keyword,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-              if (_searchController.text.isNotEmpty) ...[
-                const Text(
-                  'Résultats',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...searchResults.map((result) => Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                result['name'],
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Icon(Icons.star,
-                                      size: 16, color: Colors.purple[400]),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    result['rating'].toString(),
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    )),
-              ],
-            ],
-          ),
+          child: _searchController.text.isEmpty
+              ? Container() // Si la recherche est vide, on n'affiche rien
+              : _buildSearchResults(),
         ),
       ),
     );
