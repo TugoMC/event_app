@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/filters/event_space_filter.dart';
 import 'package:event_app/data/models/activity.dart';
 import 'package:event_app/data/models/city.dart';
@@ -413,62 +414,78 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
-          ..._filteredEventSpaces!.map((space) => GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EventSpaceDetailScreen(
-                        eventSpace: space,
+          ..._filteredEventSpaces!.map((space) => FutureBuilder<double>(
+                future: _calculateAverageRating(space.id),
+                builder: (context, snapshot) {
+                  final rating = snapshot.data ?? 0.0;
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EventSpaceDetailScreen(
+                            eventSpace: space,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: NetworkImage(space.photoUrls.first),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  space.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (rating > 0) ...[
+                                      const Icon(CupertinoIcons.star,
+                                          size: 16, color: Color(0xFF8B5CF6)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        rating.toStringAsFixed(1),
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ] else
+                                      const Text(
+                                        'Pas encore d\'avis',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
                 },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          image: DecorationImage(
-                            image: NetworkImage(space.photoUrls.first),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              space.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.star,
-                                    size: 16, color: Colors.purple[400]),
-                                const SizedBox(width: 4),
-                                Text(
-                                  space.getAverageRating().toStringAsFixed(1),
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               )),
         ],
       ],
@@ -497,5 +514,17 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
+  }
+
+  Future<double> _calculateAverageRating(String eventSpaceId) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('reviews')
+        .where('eventSpaceId', isEqualTo: eventSpaceId)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) return 0.0;
+
+    final ratings = querySnapshot.docs.map((doc) => doc['rating'] as int);
+    return ratings.reduce((a, b) => a + b) / ratings.length;
   }
 }

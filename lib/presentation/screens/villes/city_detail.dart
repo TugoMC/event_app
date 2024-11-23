@@ -1,8 +1,8 @@
-import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/models/commune.dart';
+import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
 
 class _AppBarStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -172,89 +172,84 @@ class _CityDetailScreenState extends State<CityDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = _AppBarStyles.appBarTotalHeight;
+
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('communes')
-            .where('cityId', isEqualTo: widget.cityId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Une erreur est survenue'));
-          }
+      body: Column(
+        children: [
+          // Ajoute un espace équivalent à la hauteur totale de l'AppBar
+          SizedBox(height: appBarHeight + 20), // +20 pour un espacement visuel
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('communes')
+                  .where('cityId', isEqualTo: widget.cityId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Une erreur est survenue'));
+                }
 
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          final communes = snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return Commune(
-              id: doc.id,
-              name: data['name'] as String,
-              photoUrl: data['photoUrl'] as String,
-              cityId: data['cityId'] as String,
-            );
-          }).toList();
+                final communes = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return Commune(
+                    id: doc.id,
+                    name: data['name'] as String,
+                    photoUrl: data['photoUrl'] as String,
+                    cityId: data['cityId'] as String,
+                  );
+                }).toList();
 
-          if (communes.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: _AppBarStyles.appBarTotalHeight + 20,
-                ),
-                child: const Text('Aucune commune trouvée'),
-              ),
-            );
-          }
+                if (communes.isEmpty) {
+                  return const Center(
+                    child: Text('Aucune commune trouvée'),
+                  );
+                }
 
-          return Padding(
-            padding: EdgeInsets.only(
-              top: _AppBarStyles.appBarTotalHeight + 20,
-            ),
-            child: GridView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(20),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.75,
-              ),
-              itemCount: communes.length,
-              itemBuilder: (context, index) {
-                final commune = communes[index];
-                return CommuneGridCard(
-                  name: commune.name,
-                  imageUrl: commune.photoUrl,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CommuneDetailsScreen(
-                            communeName: commune.name), // Fixed this line
-                      ),
+                return ListView.builder(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: communes.length,
+                  itemBuilder: (context, index) {
+                    final commune = communes[index];
+                    return CommuneListItem(
+                      name: commune.name,
+                      imageUrl: commune.photoUrl,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CommuneDetailsScreen(
+                              communeName: commune.name,
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 }
 
-class CommuneGridCard extends StatelessWidget {
+class CommuneListItem extends StatelessWidget {
   final String name;
   final String imageUrl;
   final VoidCallback onTap;
 
-  const CommuneGridCard({
+  const CommuneListItem({
     super.key,
     required this.name,
     required this.imageUrl,
@@ -263,77 +258,52 @@ class CommuneGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              imageUrl,
+              width: 60,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 60,
+                  height: 50,
                   color: Colors.grey[300],
-                  borderRadius: const BorderRadius.all(Radius.circular(16)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(16),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return SizedBox(
+                  width: 60,
+                  height: 50,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
                   ),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(color: Colors.white);
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              name,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
               ),
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(16),
-                ),
-              ),
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

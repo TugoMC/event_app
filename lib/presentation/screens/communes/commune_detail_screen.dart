@@ -1,7 +1,6 @@
 import 'package:event_app/presentation/screens/home/widgets/location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/data/models/activity.dart';
@@ -21,14 +20,28 @@ class _AppBarStyles {
   static const double borderRadius = 20.0;
 }
 
-class CommuneDetailsScreen extends StatelessWidget {
+class CommuneDetailsScreen extends StatefulWidget {
   final String communeName;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  CommuneDetailsScreen({
+  const CommuneDetailsScreen({
     Key? key,
     required this.communeName,
   }) : super(key: key);
+
+  @override
+  State<CommuneDetailsScreen> createState() => _CommuneDetailsScreenState();
+}
+
+class _CommuneDetailsScreenState extends State<CommuneDetailsScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _searchController = TextEditingController();
+  bool _showSearch = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Widget _buildCircularButton({
     required Widget icon,
@@ -48,6 +61,38 @@ class CommuneDetailsScreen extends StatelessWidget {
         icon: icon,
         onPressed: onPressed,
         padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Container(
+      height: _AppBarStyles.circularButtonSize,
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(_AppBarStyles.borderRadius),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Rechercher...',
+          border: InputBorder.none,
+          suffixIcon: IconButton(
+            icon: const Icon(CupertinoIcons.xmark, size: 20),
+            onPressed: () {
+              _searchController.clear();
+              setState(() {
+                _showSearch = false;
+              });
+            },
+          ),
+        ),
+        onChanged: (value) {
+          setState(() {}); // Trigger rebuild to filter results
+        },
       ),
     );
   }
@@ -89,17 +134,20 @@ class CommuneDetailsScreen extends StatelessWidget {
                             ),
                             onPressed: () => Navigator.pop(context),
                           ),
-                          const Spacer(),
-                          _buildCircularButton(
-                            icon: const HugeIcon(
-                              icon: HugeIcons.strokeRoundedPreferenceHorizontal,
-                              color: Colors.black,
-                              size: 24.0,
+                          if (_showSearch) Expanded(child: _buildSearchField()),
+                          if (!_showSearch) const Spacer(),
+                          if (!_showSearch)
+                            _buildCircularButton(
+                              icon: const Icon(
+                                CupertinoIcons.search,
+                                color: Colors.black,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showSearch = true;
+                                });
+                              },
                             ),
-                            onPressed: () {
-                              // Filtre
-                            },
-                          ),
                         ],
                       ),
                     ),
@@ -118,7 +166,7 @@ class CommuneDetailsScreen extends StatelessWidget {
                       border: Border.all(color: Colors.grey[300]!),
                     ),
                     child: Text(
-                      communeName,
+                      widget.communeName,
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 16,
@@ -142,7 +190,7 @@ class CommuneDetailsScreen extends StatelessWidget {
   Stream<List<EventSpace>> _getEventSpacesStream() {
     return _firestore
         .collection('event_spaces')
-        .where('commune.name', isEqualTo: communeName)
+        .where('commune.name', isEqualTo: widget.communeName)
         .where('isActive', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
@@ -154,6 +202,18 @@ class CommuneDetailsScreen extends StatelessWidget {
         });
       }).toList();
     });
+  }
+
+  List<EventSpace> _filterEventSpaces(List<EventSpace> spaces) {
+    if (_searchController.text.isEmpty) {
+      return spaces;
+    }
+    final searchTerm = _searchController.text.toLowerCase();
+    return spaces.where((space) {
+      return space.name.toLowerCase().contains(searchTerm) ||
+          space.activities.any(
+              (activity) => activity.type.toLowerCase().contains(searchTerm));
+    }).toList();
   }
 
   @override
@@ -182,7 +242,7 @@ class CommuneDetailsScreen extends StatelessWidget {
             );
           }
 
-          final eventSpaces = snapshot.data ?? [];
+          final eventSpaces = _filterEventSpaces(snapshot.data ?? []);
 
           if (eventSpaces.isEmpty) {
             return const Center(
@@ -219,7 +279,7 @@ class CommuneDetailsScreen extends StatelessWidget {
                     );
                   },
                   child: LocationCard(
-                    id: space.id, // Use space's ID for fetching reviews
+                    id: space.id,
                     title: space.name,
                     subtitle: _formatActivities(space.activities),
                     hours: space.hours,

@@ -101,7 +101,9 @@ class LocationCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          rating.toStringAsFixed(1),
+                          rating == 0.0
+                              ? 'Pas encore d\'avis'
+                              : rating.toStringAsFixed(1),
                           style: const TextStyle(fontSize: 14),
                         ),
                         const SizedBox(width: 16),
