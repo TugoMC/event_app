@@ -151,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               // Remplace toute la pile de navigation par LoginScreen
                               Navigator.of(context).pushAndRemoveUntil(
                                 MaterialPageRoute(
-                                  builder: (context) => LoginScreen(),
+                                  builder: (context) => AuthScreen(),
                                 ),
                                 (route) =>
                                     false, // Supprime toutes les routes précédentes

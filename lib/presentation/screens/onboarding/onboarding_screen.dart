@@ -1,7 +1,6 @@
 // lib/presentation/screens/onboarding/onboarding_screen.dart
+import 'package:event_app/presentation/screens/auth/login_screen.dart';
 import 'package:flutter/material.dart';
-
-import '../auth/auth_screen.dart';
 import 'widgets/onboarding_content.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

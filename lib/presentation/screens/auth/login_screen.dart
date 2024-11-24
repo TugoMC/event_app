@@ -1,34 +1,36 @@
-// register_screen.dart
-import 'package:event_app/presentation/screens/auth/login_screen.dart';
+// login_screen.dart
+import 'package:event_app/presentation/screens/auth/register_screen.dart';
 import 'package:event_app/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:event_app/data/services/auth_service.dart';
 
-class RegisterScreen extends StatefulWidget {
+class LoginScreen extends StatefulWidget {
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _auth = FirebaseAuth.instance;
+  final _authService = AuthService();
   bool _isLoading = false;
 
-  Future<void> _register() async {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     try {
-      await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      final result = await _authService.signInWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
-      );
+      if (result != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen()),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
@@ -41,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("S'inscrire")),
+      appBar: AppBar(title: Text('Se connecter')),
       body: Form(
         key: _formKey,
         child: Padding(
@@ -63,23 +65,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _isLoading ? null : _register,
+                onPressed: _isLoading ? null : _login,
                 child: _isLoading
                     ? CircularProgressIndicator()
-                    : Text("S'inscrire"),
+                    : Text('Se connecter'),
               ),
               TextButton(
-                onPressed: () => Navigator.pushReplacement(
+                onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  MaterialPageRoute(builder: (context) => RegisterScreen()),
                 ),
-                child: TextButton(
-                  onPressed: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  ),
-                  child: Text('Déjà un compte ? Se connecter'),
-                ),
+                child: Text('Pas encore de compte ? S\'inscrire'),
               ),
             ],
           ),

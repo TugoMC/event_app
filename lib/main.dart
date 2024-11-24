@@ -1,4 +1,5 @@
 import 'package:event_app/presentation/screens/auth/auth_screen.dart';
+import 'package:event_app/presentation/screens/auth/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -172,7 +173,7 @@ class _EntryPointState extends State<EntryPoint> {
     if (_isFirstTime) {
       return const OnboardingScreen();
     } else if (_currentUser == null) {
-      return LoginScreen();
+      return AuthScreen();
     } else {
       return const HomeScreen();
     }
