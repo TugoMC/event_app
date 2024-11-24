@@ -11,6 +11,7 @@ import 'package:event_app/presentation/screens/villes/city_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:hugeicons/hugeicons.dart';
+import 'package:shimmer/shimmer.dart';
 
 // Styles constants
 class _AppBarStyles {
@@ -50,6 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  bool _isLoading = false;
   final List<Activity> _selectedActivities = [];
 
   List<City>? _filteredCities;
@@ -100,24 +102,32 @@ class _SearchScreenState extends State<SearchScreen> {
     final query = _searchController.text;
 
     setState(() {
-      // Mettre à jour les EventSpaces filtrés
-      _updateFilteredEventSpaces();
+      _isLoading = true;
+    });
 
-      // Filtrer les villes et communes uniquement si une recherche textuelle est active
-      if (query.isNotEmpty) {
-        _filteredCities = widget.allCities
-            ?.where(
-                (city) => city.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+    // Simuler un délai de chargement
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
 
-        _filteredCommunes = widget.allCommunes
-            ?.where((commune) =>
-                commune.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      } else {
-        _filteredCities = null;
-        _filteredCommunes = null;
-      }
+      setState(() {
+        _updateFilteredEventSpaces();
+
+        if (query.isNotEmpty) {
+          _filteredCities = widget.allCities
+              ?.where((city) =>
+                  city.name.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+
+          _filteredCommunes = widget.allCommunes
+              ?.where((commune) =>
+                  commune.name.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+        } else {
+          _filteredCities = null;
+          _filteredCommunes = null;
+        }
+        _isLoading = false;
+      });
     });
   }
 
@@ -291,6 +301,13 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchResults() {
+    if (_isLoading) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(5, (index) => const ShimmerItem()),
+      );
+    }
+
     final bool hasSearchResults = _searchController.text.isNotEmpty &&
         (_filteredCities?.isNotEmpty == true ||
             _filteredCommunes?.isNotEmpty == true ||
@@ -505,7 +522,7 @@ class _SearchScreenState extends State<SearchScreen> {
         controller: _scrollController,
         child: Padding(
           padding: EdgeInsets.only(
-            top: _AppBarStyles.appBarTotalHeight + 20,
+            top: _AppBarStyles.appBarTotalHeight + 40,
             left: 20,
             right: 20,
             bottom: 20,
@@ -526,5 +543,52 @@ class _SearchScreenState extends State<SearchScreen> {
 
     final ratings = querySnapshot.docs.map((doc) => doc['rating'] as int);
     return ratings.reduce((a, b) => a + b) / ratings.length;
+  }
+}
+
+// Ajout du widget Shimmer
+class ShimmerItem extends StatelessWidget {
+  const ShimmerItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    height: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 100,
+                    height: 14,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:event_app/presentation/screens/villes/city_detail.dart';
+import 'package:event_app/presentation/screens/villes/shimmer_load.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,6 +19,9 @@ class _AppBarStyles {
   static const double spaceBetweenButtonAndTitle = 8.0;
   static const double borderRadius = 20.0;
   static const double scrollThreshold = 80.0;
+  static const double listItemSpacing = 16.0;
+  static const double listTopPadding = 40.0;
+  static const double listBottomPadding = 20.0;
 }
 
 class AllCitiesScreen extends StatefulWidget {
@@ -166,73 +170,99 @@ class _AllCitiesScreenState extends State<AllCitiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = _AppBarStyles.appBarTotalHeight;
+
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('cities').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Une erreur est survenue'));
-          }
+      body: Column(
+        children: [
+          SizedBox(height: appBarHeight + 16),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance.collection('cities').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Une erreur est survenue'));
+                }
 
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final cities = snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return City(
-              id: doc.id,
-              name: data['name'] as String,
-            );
-          }).toList();
-
-          return GridView.builder(
-            controller: _scrollController,
-            padding: EdgeInsets.only(
-              top: _AppBarStyles.appBarTotalHeight + 20,
-              left: 20,
-              right: 20,
-              bottom: 20,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.85,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: cities.length,
-            itemBuilder: (context, index) {
-              final city = cities[index];
-              return CityGridCard(
-                name: city.name,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CityDetailScreen(
-                        cityId: city.id,
-                        cityName: city.name,
-                      ),
+                if (!snapshot.hasData) {
+                  return ListView.separated(
+                    padding: const EdgeInsets.only(
+                      top: _AppBarStyles.listTopPadding,
+                      left: 20,
+                      right: 20,
+                      bottom: _AppBarStyles.listBottomPadding,
                     ),
+                    itemCount: 10, // Nombre d'items de shimmer à afficher
+                    separatorBuilder: (context, index) => const SizedBox(
+                      height: _AppBarStyles.listItemSpacing,
+                    ),
+                    itemBuilder: (context, index) =>
+                        const ShimmerListItem(isCity: true),
                   );
-                },
-              );
-            },
-          );
-        },
+                }
+
+                final cities = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return City(
+                    id: doc.id,
+                    name: data['name'] as String,
+                  );
+                }).toList();
+
+                if (cities.isEmpty) {
+                  return const Center(
+                    child: Text('Aucune ville trouvée'),
+                  );
+                }
+
+                return ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(
+                    top: _AppBarStyles.listTopPadding,
+                    left: 20,
+                    right: 20,
+                    bottom: _AppBarStyles.listBottomPadding,
+                  ),
+                  itemCount: cities.length,
+                  separatorBuilder: (context, index) => const SizedBox(
+                    height: _AppBarStyles.listItemSpacing,
+                  ),
+                  itemBuilder: (context, index) {
+                    final city = cities[index];
+                    return CityListItem(
+                      name: city.name,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CityDetailScreen(
+                              cityId: city.id,
+                              cityName: city.name,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class CityGridCard extends StatelessWidget {
+class CityListItem extends StatelessWidget {
   final String name;
   final VoidCallback onTap;
 
-  const CityGridCard({
+  const CityListItem({
     super.key,
     required this.name,
     required this.onTap,
@@ -240,62 +270,56 @@ class CityGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              Container(
+                width: 80,
+                height: 70,
                 decoration: BoxDecoration(
                   color: const Color(0xFF8B5CF6),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
                   child: Text(
                     name.substring(0, 2).toUpperCase(),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 48,
+                      fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(16),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ),
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

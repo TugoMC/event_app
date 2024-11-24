@@ -1,3 +1,4 @@
+import 'package:event_app/presentation/screens/profile/shimmer_load.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -276,7 +277,23 @@ class _UserReviewsScreenState extends State<UserReviewsScreen> {
                   .get(), // Utilisation de get() au lieu de snapshots()
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: _ReviewStyles.appBarTotalHeight + 40,
+                        left: 20,
+                        right: 20,
+                        bottom: 20,
+                      ),
+                      child: Column(
+                        children: List.generate(
+                          3, // Nombre de shimmer cards à afficher
+                          (index) => const ShimmerReviewCard(),
+                        ),
+                      ),
+                    ),
+                  );
                 }
 
                 if (snapshot.hasError) {
@@ -304,7 +321,7 @@ class _UserReviewsScreenState extends State<UserReviewsScreen> {
                   controller: _scrollController,
                   child: Padding(
                     padding: EdgeInsets.only(
-                      top: _ReviewStyles.appBarTotalHeight + 20,
+                      top: _ReviewStyles.appBarTotalHeight,
                       left: 20,
                       right: 20,
                       bottom: 20,
@@ -319,8 +336,7 @@ class _UserReviewsScreenState extends State<UserReviewsScreen> {
                             builder: (context, eventSpaceSnapshot) {
                               if (eventSpaceSnapshot.connectionState ==
                                   ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
+                                return const ShimmerReviewCard();
                               }
 
                               final eventSpace = eventSpaceSnapshot.data;

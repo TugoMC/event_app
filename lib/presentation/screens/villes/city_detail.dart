@@ -1,3 +1,4 @@
+import 'package:event_app/presentation/screens/villes/shimmer_load.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,6 +18,9 @@ class _AppBarStyles {
   static const double spaceBetweenButtonAndTitle = 8.0;
   static const double borderRadius = 20.0;
   static const double scrollThreshold = 80.0;
+  static const double listItemSpacing = 16.0;
+  static const double listTopPadding = 40.0;
+  static const double listBottomPadding = 20.0;
 }
 
 class CityDetailScreen extends StatefulWidget {
@@ -180,8 +184,9 @@ class _CityDetailScreenState extends State<CityDetailScreen> {
       appBar: _buildAppBar(context, showBanner: true),
       body: Column(
         children: [
-          // Ajoute un espace équivalent à la hauteur totale de l'AppBar
-          SizedBox(height: appBarHeight + 20), // +20 pour un espacement visuel
+          SizedBox(
+              height:
+                  appBarHeight + 16), // Ajout d'un espacement supplémentaire
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -194,7 +199,20 @@ class _CityDetailScreenState extends State<CityDetailScreen> {
                 }
 
                 if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                  return ListView.separated(
+                    padding: const EdgeInsets.only(
+                      top: _AppBarStyles.listTopPadding,
+                      left: 20,
+                      right: 20,
+                      bottom: _AppBarStyles.listBottomPadding,
+                    ),
+                    itemCount: 10,
+                    separatorBuilder: (context, index) => const SizedBox(
+                      height: _AppBarStyles.listItemSpacing,
+                    ),
+                    itemBuilder: (context, index) =>
+                        const ShimmerListItem(isCity: false),
+                  );
                 }
 
                 final communes = snapshot.data!.docs.map((doc) {
@@ -213,25 +231,47 @@ class _CityDetailScreenState extends State<CityDetailScreen> {
                   );
                 }
 
-                return ListView.builder(
+                return ListView.separated(
                   controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.only(
+                    top: _AppBarStyles.listTopPadding,
+                    left: 20,
+                    right: 20,
+                    bottom: _AppBarStyles.listBottomPadding,
+                  ),
                   itemCount: communes.length,
+                  separatorBuilder: (context, index) => const SizedBox(
+                    height: _AppBarStyles.listItemSpacing,
+                  ),
                   itemBuilder: (context, index) {
                     final commune = communes[index];
-                    return CommuneListItem(
-                      name: commune.name,
-                      imageUrl: commune.photoUrl,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CommuneDetailsScreen(
-                              communeName: commune.name,
-                            ),
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
                           ),
-                        );
-                      },
+                        ],
+                      ),
+                      child: CommuneListItem(
+                        name: commune.name,
+                        imageUrl: commune.photoUrl,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CommuneDetailsScreen(
+                                communeName: commune.name,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     );
                   },
                 );
@@ -260,50 +300,54 @@ class CommuneListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              imageUrl,
-              width: 60,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 60,
-                  height: 50,
-                  color: Colors.grey[300],
-                );
-              },
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return SizedBox(
-                  width: 60,
-                  height: 50,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                width: 80,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 80,
+                    height: 70,
+                    color: Colors.grey[300],
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return SizedBox(
+                    width: 60,
+                    height: 50,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
+                  );
+                },
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

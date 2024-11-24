@@ -1,3 +1,4 @@
+import 'package:event_app/presentation/screens/communes/shimmer_load.dart';
 import 'package:event_app/presentation/screens/home/widgets/location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -237,8 +238,10 @@ class _CommuneDetailsScreenState extends State<CommuneDetailsScreen> {
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              itemCount: 5, // nombre de shimmer items à afficher
+              itemBuilder: (context, index) => const LocationCardShimmer(),
             );
           }
 

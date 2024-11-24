@@ -1,11 +1,10 @@
+import 'package:event_app/presentation/screens/communes/shimmer_load.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/data/models/commune.dart';
 import 'package:event_app/presentation/screens/communes/commune_detail_screen.dart';
 
-// Constantes de style déplacées directement dans la classe
 class _AppBarStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
@@ -19,6 +18,9 @@ class _AppBarStyles {
   static const double spaceBetweenButtonAndTitle = 8.0;
   static const double borderRadius = 20.0;
   static const double scrollThreshold = 80.0;
+  static const double listItemSpacing = 16.0;
+  static const double listTopPadding = 40.0;
+  static const double listBottomPadding = 20.0;
 }
 
 class AllCommunesScreen extends StatefulWidget {
@@ -30,7 +32,9 @@ class AllCommunesScreen extends StatefulWidget {
 
 class _AllCommunesScreenState extends State<AllCommunesScreen> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   bool _isScrolled = false;
+  bool _showSearch = false;
 
   @override
   void initState() {
@@ -42,6 +46,7 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -53,6 +58,38 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
         _isScrolled) {
       setState(() => _isScrolled = false);
     }
+  }
+
+  Widget _buildSearchField() {
+    return Container(
+      height: _AppBarStyles.circularButtonSize,
+      margin: const EdgeInsets.only(right: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(_AppBarStyles.borderRadius),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Rechercher...',
+          border: InputBorder.none,
+          suffixIcon: IconButton(
+            icon: const Icon(CupertinoIcons.xmark, size: 20),
+            onPressed: () {
+              _searchController.clear();
+              setState(() {
+                _showSearch = false;
+              });
+            },
+          ),
+        ),
+        onChanged: (value) {
+          setState(() {}); // Trigger rebuild to filter results
+        },
+      ),
+    );
   }
 
   Widget _buildCircularButton({
@@ -128,18 +165,21 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
                               ),
                               onPressed: () => Navigator.pop(context),
                             ),
-                            const Spacer(),
-                            _buildCircularButton(
-                              icon: const HugeIcon(
-                                icon:
-                                    HugeIcons.strokeRoundedPreferenceHorizontal,
-                                color: Colors.black,
-                                size: 24.0,
+                            if (_showSearch)
+                              Expanded(child: _buildSearchField()),
+                            if (!_showSearch) const Spacer(),
+                            if (!_showSearch)
+                              _buildCircularButton(
+                                icon: const Icon(
+                                  CupertinoIcons.search,
+                                  color: Colors.black,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _showSearch = true;
+                                  });
+                                },
                               ),
-                              onPressed: () {
-                                // Filtre
-                              },
-                            ),
                           ],
                         ),
                       ),
@@ -176,73 +216,116 @@ class _AllCommunesScreenState extends State<AllCommunesScreen> {
     );
   }
 
+  List<Commune> _filterCommunes(List<Commune> communes) {
+    if (_searchController.text.isEmpty) {
+      return communes;
+    }
+    final searchTerm = _searchController.text.toLowerCase();
+    return communes.where((commune) {
+      return commune.name.toLowerCase().contains(searchTerm);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appBarHeight = _AppBarStyles.appBarTotalHeight;
+
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('communes').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('Une erreur est survenue'));
-          }
+      body: Column(
+        children: [
+          SizedBox(height: appBarHeight + 16),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream:
+                  FirebaseFirestore.instance.collection('communes').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Une erreur est survenue'));
+                }
 
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final communes = snapshot.data!.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return Commune.fromJson(data);
-          }).toList();
-
-          return GridView.builder(
-            controller: _scrollController,
-            padding: EdgeInsets.only(
-              top: _AppBarStyles.appBarTotalHeight + 20,
-              left: 20,
-              right: 20,
-              bottom: 20,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.85,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: communes.length,
-            itemBuilder: (context, index) {
-              final commune = communes[index];
-              return CommuneGridCard(
-                name: commune.name,
-                imageUrl: commune.photoUrl,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CommuneDetailsScreen(
-                        communeName: commune.name,
-                      ),
-                    ),
+                if (!snapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: 8, // nombre de shimmer items à afficher
+                    itemBuilder: (context, index) =>
+                        const CommuneListItemShimmer(),
                   );
-                },
-              );
-            },
-          );
-        },
+                }
+
+                final communes = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return Commune.fromJson(data);
+                }).toList();
+
+                final filteredCommunes = _filterCommunes(communes);
+
+                if (filteredCommunes.isEmpty) {
+                  return const Center(
+                    child: Text('Aucune commune trouvée'),
+                  );
+                }
+
+                return ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.only(
+                    top: _AppBarStyles.listTopPadding,
+                    left: 20,
+                    right: 20,
+                    bottom: _AppBarStyles.listBottomPadding,
+                  ),
+                  itemCount: filteredCommunes.length,
+                  separatorBuilder: (context, index) => const SizedBox(
+                    height: _AppBarStyles.listItemSpacing,
+                  ),
+                  itemBuilder: (context, index) {
+                    final commune = filteredCommunes[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: CommuneListItem(
+                        name: commune.name,
+                        imageUrl: commune.photoUrl,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CommuneDetailsScreen(
+                                communeName: commune.name,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class CommuneGridCard extends StatelessWidget {
+class CommuneListItem extends StatelessWidget {
   final String name;
   final String imageUrl;
   final VoidCallback onTap;
 
-  const CommuneGridCard({
+  const CommuneListItem({
     super.key,
     required this.name,
     required this.imageUrl,
@@ -251,66 +334,52 @@ class CommuneGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
           children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: const BorderRadius.all(Radius.circular(16)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(16),
-                  ),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(color: Colors.white);
-                    },
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
-                ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                imageUrl,
+                width: 80,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 80,
+                    height: 70,
+                    color: Colors.grey[300],
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return SizedBox(
+                    width: 60,
+                    height: 50,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        value: loadingProgress.expectedTotalBytes != null
+                            ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                            : null,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(16),
-                ),
-              ),
+            const SizedBox(width: 16),
+            Expanded(
               child: Text(
                 name,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w400,
                 ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

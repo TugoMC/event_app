@@ -1,4 +1,5 @@
 import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
+import 'package:event_app/presentation/screens/profile/shimmer_load.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:event_app/data/models/event_space.dart';
@@ -251,7 +252,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       stream: _favoritesStream,
       builder: (context, snapshotFavorites) {
         if (snapshotFavorites.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return ListView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 5, // Nombre de shimmer cards à afficher
+            itemBuilder: (context, index) => const ShimmerFavoriteCard(),
+          );
         }
 
         if (!snapshotFavorites.hasData || snapshotFavorites.data!.isEmpty) {
@@ -272,7 +279,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
               .snapshots(),
           builder: (context, snapshotSpaces) {
             if (!snapshotSpaces.hasData) {
-              return const Center(child: CircularProgressIndicator());
+              return ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: favorites.length,
+                itemBuilder: (context, index) => const ShimmerFavoriteCard(),
+              );
             }
 
             final eventSpaces = snapshotSpaces.data!.docs
@@ -304,7 +317,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         controller: _scrollController,
         child: Padding(
           padding: EdgeInsets.only(
-            top: _FavoritesStyles.appBarTotalHeight + 20,
+            top: _FavoritesStyles.appBarTotalHeight + 40,
             left: 20,
             right: 20,
             bottom: 20,
