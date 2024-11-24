@@ -6,6 +6,36 @@ class DeleteCommuneScreen extends StatelessWidget {
 
   const DeleteCommuneScreen({super.key, required this.communeId});
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final bool? confirmation = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text(
+              'Êtes-vous sûr de vouloir supprimer cette commune? Cette action est irréversible.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Annuler
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // Confirmer
+              child: const Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmation == true) {
+      _deleteCommune(context);
+    }
+  }
+
   Future<void> _deleteCommune(BuildContext context) async {
     try {
       await FirebaseFirestore.instance
@@ -31,10 +61,11 @@ class DeleteCommuneScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Êtes-vous sûr de vouloir supprimer cette commune?'),
+            const Text(
+                'Cliquez sur le bouton ci-dessous pour confirmer la suppression.'),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => _deleteCommune(context),
+              onPressed: () => _confirmDelete(context),
               child: const Text('Supprimer'),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             ),

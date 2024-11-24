@@ -7,6 +7,48 @@ import 'edit_commune_screen.dart'; // Page pour modifier une commune
 class CommuneListScreen extends StatelessWidget {
   const CommuneListScreen({super.key});
 
+  Future<void> _confirmDelete(BuildContext context, String communeId) async {
+    final bool? confirmation = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content: const Text(
+              'Êtes-vous sûr de vouloir supprimer cette commune? Cette action est irréversible.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // Annuler
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true), // Confirmer
+              child: const Text(
+                'Supprimer',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmation == true) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('communes')
+            .doc(communeId)
+            .delete();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Commune supprimée avec succès!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la suppression: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,15 +92,7 @@ class CommuneListScreen extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed: () async {
-                        await FirebaseFirestore.instance
-                            .collection('communes')
-                            .doc(commune.id)
-                            .delete();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Commune supprimée')),
-                        );
-                      },
+                      onPressed: () => _confirmDelete(context, commune.id),
                     ),
                   ],
                 ),

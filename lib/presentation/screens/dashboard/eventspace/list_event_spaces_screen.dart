@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:event_app/presentation/screens/dashboard/eventspace/edit_event_space_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/data/models/city.dart';
@@ -174,91 +175,119 @@ class _ListEventSpacesScreenState extends State<ListEventSpacesScreen> {
 
   Widget _buildEventSpaceCard(EventSpace eventSpace) {
     return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Dans _buildEventSpaceCard, remplacer la condition existante pour les images par :
-          if (eventSpace.photoUrls.isNotEmpty)
-            EventSpaceImageCarousel(
-              photoUrls: eventSpace.photoUrls,
-              height: 200,
-            ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        margin: const EdgeInsets.all(8.0),
+        child: InkWell(
+          // Ajouter InkWell pour rendre la carte cliquable
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    EditEventSpaceScreen(eventSpace: eventSpace),
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (eventSpace.photoUrls.isNotEmpty)
+                EventSpaceImageCarousel(
+                  photoUrls: eventSpace.photoUrls,
+                  height: 200,
+                ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        eventSpace.name,
-                        style: Theme.of(context).textTheme.titleLarge,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (!eventSpace.isActive)
-                      const Chip(
-                        label: Text('Inactif'),
-                        backgroundColor: Colors.red,
-                        labelStyle: TextStyle(color: Colors.white),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${eventSpace.city.name} - ${eventSpace.commune.name}',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  eventSpace.description,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 4.0,
-                  children: eventSpace.activities.map((activity) {
-                    return Chip(
-                      label: Text(activity.type),
-                      backgroundColor:
-                          Theme.of(context).primaryColor.withOpacity(0.1),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${eventSpace.price.toStringAsFixed(2)} FCFA',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.star,
-                          color: Colors.amber,
-                          size: 20,
+                        Expanded(
+                          child: Text(
+                            eventSpace.name,
+                            style: Theme.of(context).textTheme.titleLarge,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        IconButton(
+                          // Ajouter un bouton d'édition
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditEventSpaceScreen(
+                                    eventSpace: eventSpace),
+                              ),
+                            ).then((updatedEventSpace) {
+                              if (updatedEventSpace != null) {
+                                // Rafraîchir la liste si nécessaire
+                                setState(() {});
+                              }
+                            });
+                          },
+                        ),
+                        if (!eventSpace.isActive)
+                          const Chip(
+                            label: Text('Inactif'),
+                            backgroundColor: Colors.red,
+                            labelStyle: TextStyle(color: Colors.white),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${eventSpace.city.name} - ${eventSpace.commune.name}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      eventSpace.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 4.0,
+                      children: eventSpace.activities.map((activity) {
+                        return Chip(
+                          label: Text(activity.type),
+                          backgroundColor:
+                              Theme.of(context).primaryColor.withOpacity(0.1),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
                         Text(
-                          ' ${eventSpace.getAverageRating().toStringAsFixed(1)}',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          '${eventSpace.price.toStringAsFixed(2)} FCFA',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 20,
+                            ),
+                            Text(
+                              ' ${eventSpace.getAverageRating().toStringAsFixed(1)}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 
   @override

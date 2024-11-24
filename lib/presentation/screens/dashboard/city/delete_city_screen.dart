@@ -20,6 +20,35 @@ class DeleteCityScreen extends StatelessWidget {
     }
   }
 
+  void _confirmDeletion(String cityId, String cityName, BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmation'),
+          content:
+              Text('Voulez-vous vraiment supprimer la ville "$cityName" ?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Ferme la boîte de dialogue
+              },
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Ferme la boîte de dialogue
+                _deleteCity(cityId, context); // Supprime la ville
+              },
+              child:
+                  const Text('Supprimer', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -48,7 +77,11 @@ class DeleteCityScreen extends StatelessWidget {
                 title: Text(city['name']),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteCity(city['id'], context),
+                  onPressed: () => _confirmDeletion(
+                    city.id, // L'identifiant du document
+                    city['name'], // Le nom de la ville
+                    context,
+                  ),
                 ),
               );
             },
