@@ -37,96 +37,127 @@ class LocationCard extends StatelessWidget {
       builder: (context, snapshot) {
         final rating = snapshot.data ?? 0.0;
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                height: 160,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                ),
-                child: imageUrl != null
-                    ? ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10)),
-                        child: Image.network(
-                          imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(color: Colors.grey[300]);
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(color: Colors.grey[300]);
-                          },
-                        ),
-                      )
-                    : null,
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Calcul de la hauteur d'image adaptative
+            final imageHeight = constraints.maxWidth > 600 ? 200.0 : 160.0;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                    AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(10)),
+                        ),
+                        child: imageUrl != null
+                            ? ClipRRect(
+                                borderRadius:
+                                    const BorderRadius.all(Radius.circular(10)),
+                                child: Image.network(
+                                  imageUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(color: Colors.grey[300]);
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(color: Colors.grey[300]);
+                                  },
+                                ),
+                              )
+                            : null,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(
-                          CupertinoIcons.star,
-                          color: Color(0xFF8B5CF6),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          rating == 0.0
-                              ? 'Pas encore d\'avis'
-                              : rating.toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        const SizedBox(width: 16),
-                        const Icon(
-                          CupertinoIcons.clock,
-                          color: Color(0xFF8B5CF6),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          hours,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
+                    Padding(
+                      padding: EdgeInsets.all(constraints.maxWidth * 0.04),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 16,
+                            runSpacing: 8,
+                            children: [
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    CupertinoIcons.star,
+                                    color: Color(0xFF8B5CF6),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    rating == 0.0
+                                        ? 'Pas encore d\'avis'
+                                        : rating.toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    CupertinoIcons.clock,
+                                    color: Color(0xFF8B5CF6),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      hours,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
