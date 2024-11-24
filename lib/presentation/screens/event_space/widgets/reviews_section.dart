@@ -17,13 +17,15 @@ class ReviewsSection extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Reviews',
+            'Avis des utilisateurs',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.5,
             ),
           ),
         ),
+        const SizedBox(height: 16),
         FutureBuilder<List<Review>>(
           future: _fetchReviews(eventSpaceId),
           builder: (context, snapshot) {
@@ -33,24 +35,59 @@ class ReviewsSection extends StatelessWidget {
             if (snapshot.hasError) {
               return Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Erreur lors de la récupération des reviews : ${snapshot.error}',
-                  style: TextStyle(color: Colors.red),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(CupertinoIcons.exclamationmark_circle,
+                          color: Colors.red[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Erreur lors de la récupération des reviews : ${snapshot.error}',
+                          style: TextStyle(color: Colors.red[700]),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
             final reviews = snapshot.data ?? [];
             if (reviews.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Aucun avis disponible pour le moment.'),
+              return Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: const Center(
+                  child: Text(
+                    'Aucun avis disponible pour le moment.',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
               );
             }
 
-            return ListView.builder(
+            return ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: reviews.length,
+              separatorBuilder: (context, index) => const Divider(
+                height: 32,
+                indent: 16,
+                endIndent: 16,
+              ),
               itemBuilder: (context, index) {
                 final review = reviews[index];
                 return FutureBuilder<Map<String, dynamic>?>(
@@ -58,7 +95,6 @@ class ReviewsSection extends StatelessWidget {
                   builder: (context, userSnapshot) {
                     String displayName;
                     if (userSnapshot.hasData && userSnapshot.data != null) {
-                      // Utiliser l'email de l'utilisateur depuis Firestore
                       final email = userSnapshot.data!['email'] as String;
                       displayName = email.split('@').first;
                     } else {
@@ -66,35 +102,71 @@ class ReviewsSection extends StatelessWidget {
                     }
 
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(
-                                displayName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor:
+                                    const Color(0xFF8773F8).withOpacity(0.1),
+                                child: Text(
+                                  displayName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Color(0xFF8773F8),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                _formatDate(review.createdAt),
-                                style: TextStyle(
-                                  color: Colors.grey[600],
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      displayName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _formatDate(review.createdAt),
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          _buildStarRating(review.rating),
-                          const SizedBox(height: 4),
-                          Text(
-                            review.comment,
-                            style: TextStyle(
-                              color: Colors.grey[800],
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[200]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildStarRating(review.rating),
+                                const SizedBox(height: 8),
+                                Text(
+                                  review.comment,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -113,10 +185,13 @@ class ReviewsSection extends StatelessWidget {
   Widget _buildStarRating(int rating) {
     return Row(
       children: List.generate(5, (index) {
-        return Icon(
-          index < rating ? CupertinoIcons.star_fill : CupertinoIcons.star,
-          color: const Color(0xFF8773F8),
-          size: 20,
+        return Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: Icon(
+            index < rating ? CupertinoIcons.star_fill : CupertinoIcons.star,
+            color: const Color(0xFF8773F8),
+            size: 18,
+          ),
         );
       }),
     );
@@ -140,7 +215,21 @@ class ReviewsSection extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final months = [
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   Future<List<Review>> _fetchReviews(String eventSpaceId) async {

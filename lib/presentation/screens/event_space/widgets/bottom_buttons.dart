@@ -8,6 +8,40 @@ class BottomButtons extends StatelessWidget {
 
   const BottomButtons({Key? key, required this.eventSpace}) : super(key: key);
 
+  Future<void> _openMap(BuildContext context) async {
+    final Uri locationUri = Uri.parse(
+        eventSpace.location); // L'URL complète stockée dans la base de données
+
+    try {
+      // Tente d'ouvrir l'URL dans une application de cartographie
+      if (await canLaunchUrl(locationUri)) {
+        await launchUrl(
+          locationUri,
+          mode: LaunchMode
+              .externalApplication, // Force le lancement dans une application externe
+        );
+      } else {
+        // Si l'application de cartographie échoue, tente d'ouvrir dans le navigateur
+        if (await canLaunchUrl(locationUri)) {
+          await launchUrl(locationUri, mode: LaunchMode.externalApplication);
+        } else {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Impossible d\'ouvrir la carte.')),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Erreur lors de l\'ouverture : ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -33,10 +67,12 @@ class BottomButtons extends StatelessWidget {
                   if (await canLaunchUrl(phoneUri)) {
                     await launchUrl(phoneUri);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('Impossible de passer l\'appel')),
-                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Impossible de passer l\'appel')),
+                      );
+                    }
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -64,18 +100,7 @@ class BottomButtons extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: IconButton(
-                onPressed: () async {
-                  final Uri locationUri = Uri.parse(eventSpace.location);
-                  if (await canLaunchUrl(locationUri)) {
-                    await launchUrl(locationUri);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Impossible d\'ouvrir la localisation')),
-                    );
-                  }
-                },
+                onPressed: () => _openMap(context),
                 icon: const Icon(
                   CupertinoIcons.location_solid,
                   color: Colors.white,

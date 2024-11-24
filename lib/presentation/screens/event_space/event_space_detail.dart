@@ -253,9 +253,39 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ImageCarousel(photoUrls: widget.eventSpace.photoUrls),
-                    DetailsHeader(eventSpace: widget.eventSpace),
-                    ActivitiesSection(activities: widget.eventSpace.activities),
-                    ReviewsSection(eventSpaceId: widget.eventSpace.id),
+                    const SizedBox(
+                        height: 32), // Espacement augmenté après le carousel
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DetailsHeader(eventSpace: widget.eventSpace),
+                          const SizedBox(
+                              height:
+                                  40), // Espacement augmenté entre les sections
+
+                          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                          const SizedBox(
+                              height:
+                                  40), // Ajout d'un séparateur avec espacement
+
+                          ActivitiesSection(
+                              activities: widget.eventSpace.activities),
+                          const SizedBox(
+                              height:
+                                  40), // Espacement augmenté entre les sections
+
+                          const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                          const SizedBox(
+                              height:
+                                  40), // Ajout d'un séparateur avec espacement
+
+                          ReviewsSection(eventSpaceId: widget.eventSpace.id),
+                        ],
+                      ),
+                    ),
                     const SizedBox(
                         height: 100), // Espace pour les boutons du bas
                   ],
@@ -267,7 +297,19 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: BottomButtons(eventSpace: widget.eventSpace),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: BottomButtons(eventSpace: widget.eventSpace),
+            ),
           ),
         ],
       ),
