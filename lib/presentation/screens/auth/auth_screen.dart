@@ -1,3 +1,4 @@
+import 'package:event_app/presentation/screens/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:event_app/data/services/auth_service.dart';
 import 'package:event_app/presentation/screens/auth/login_screen.dart';
@@ -25,7 +26,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (result != null && mounted) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } catch (e) {
@@ -41,50 +42,49 @@ class _AuthScreenState extends State<AuthScreen> {
     required String text,
     required double height,
   }) {
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12.withOpacity(0.05),
-            spreadRadius: 1,
-            blurRadius: 7,
-            offset: const Offset(0, -1),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: 62,
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF8773F8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: EdgeInsets.zero,
           ),
-        ],
-      ),
-      child: MaterialButton(
-        onPressed: onPressed,
-        child: Stack(
-          children: [
-            // SVG Icon with fixed position
-            Positioned(
-              left: 32, // Position fixe pour tous les icônes
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: SvgPicture.asset(
-                  iconPath,
-                  height: 20,
-                  width: 20,
+          child: Stack(
+            children: [
+              // SVG Icon with fixed position
+              Positioned(
+                left: 32,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: SvgPicture.asset(
+                    iconPath,
+                    height: 20,
+                    width: 20,
+                    colorFilter:
+                        const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  ),
                 ),
               ),
-            ),
-            // Centered text
-            Center(
-              child: Text(
-                text,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.black87,
+              // Centered text
+              Center(
+                child: Text(
+                  text,
+                  style: const TextStyle(
+                    fontFamily: 'Sen',
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -111,7 +111,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     bottomLeft: Radius.circular(40),
                     bottomRight: Radius.circular(40),
                   ),
-                  color: Color(0xFF6C63FF),
+                  color: Color(0xFF8B5CF6),
                   image: DecorationImage(
                     image: AssetImage("images/image.png"),
                     fit: BoxFit.cover,
@@ -163,7 +163,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         height: size.height * 0.06,
                         onPressed: _handleGoogleSignIn,
                         iconPath: 'assets/icons/google.svg',
-                        text: "Continue with Google",
+                        text: "Continuer avec Google",
                       ),
                       const SizedBox(height: 16),
                       _buildButton(

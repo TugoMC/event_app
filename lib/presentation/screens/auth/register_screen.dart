@@ -64,6 +64,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         horizontal: 25,
         vertical: 10,
       ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword
@@ -109,14 +112,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 )
               : null,
         ),
-        validator: (value) {
-          if (value?.isEmpty ?? true) {
-            if (isPassword) return 'Entrez votre mot de passe';
-            if (isConfirmPassword) return 'Confirmez votre mot de passe';
-            return 'Entrez votre email';
-          }
-          return null;
-        },
+        validator: (value) => value?.isEmpty ?? true
+            ? isPassword
+                ? 'Entrez votre mot de passe'
+                : isConfirmPassword
+                    ? 'Confirmez votre mot de passe'
+                    : 'Entrez votre email'
+            : null,
+        style: const TextStyle(color: Colors.black87),
       ),
     );
   }
@@ -134,7 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios,
-            color: Colors.white,
+            color: Colors.black,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -145,9 +148,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF6C63FF),
-              Color(0xFF8983FF),
-              Color(0xFFA5A0FF),
+              Color(0xffF4EEF2),
+              Color(0xffF4EEF2),
+              Color(0xffE3EDF5),
             ],
           ),
         ),
@@ -163,7 +166,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 37,
-                    color: Colors.white,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 15),
@@ -172,7 +175,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 27,
-                    color: Colors.white70,
+                    color: Colors.black87,
                     height: 1.2,
                   ),
                 ),
@@ -188,30 +191,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 SizedBox(height: size.height * 0.04),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
-                  child: Container(
-                    width: size.width,
-                    height: 65,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _register,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8773F8),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 22),
                     ),
-                    child: TextButton(
-                      onPressed: _isLoading ? null : _register,
-                      child: _isLoading
-                          ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Color(0xFF6C63FF),
-                              ),
-                            )
-                          : const Text(
-                              "S'inscrire",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF6C63FF),
-                                fontSize: 22,
-                              ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          )
+                        : const Text(
+                            "S'INSCRIRE",
+                            style: TextStyle(
+                              fontFamily: 'Sen',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 22,
                             ),
-                    ),
+                          ),
                   ),
                 ),
                 SizedBox(height: size.height * 0.07),
@@ -221,19 +225,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       context,
                       MaterialPageRoute(builder: (context) => LoginScreen()),
                     ),
-                    child: Text.rich(
+                    child: const Text.rich(
                       TextSpan(
                         text: "Déjà un compte ? ",
-                        style: const TextStyle(
-                          color: Colors.white70,
+                        style: TextStyle(
+                          color: Colors.black87,
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
-                        children: const [
+                        children: [
                           TextSpan(
                             text: "Se connecter",
                             style: TextStyle(
-                              color: Colors.white,
+                              color: Color(0xFF8B5CF6),
                               fontWeight: FontWeight.bold,
                             ),
                           ),

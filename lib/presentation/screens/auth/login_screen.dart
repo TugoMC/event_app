@@ -42,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF6C63FF),
+                        color: Color(0xFF8B5CF6),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Container(
                           height: 45,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6C63FF),
+                            color: const Color(0xFF8B5CF6),
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: TextButton(
@@ -205,6 +205,9 @@ class _LoginScreenState extends State<LoginScreen> {
         horizontal: 25,
         vertical: 10,
       ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword && !_isPasswordVisible,
@@ -245,6 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ? 'Entrez votre mot de passe'
                 : 'Entrez votre email'
             : null,
+        style: const TextStyle(color: Colors.black87),
       ),
     );
   }
@@ -262,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios,
-            color: Colors.white,
+            color: Colors.black,
           ),
           onPressed: () => Navigator.pop(context),
         ),
@@ -273,9 +277,9 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF6C63FF),
-              Color(0xFF8983FF),
-              Color(0xFFA5A0FF),
+              Color(0xffF4EEF2),
+              Color(0xffF4EEF2),
+              Color(0xffE3EDF5),
             ],
           ),
         ),
@@ -293,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 37,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 15),
@@ -301,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       "Ravi de vous revoir",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                          fontSize: 27, color: Colors.white70, height: 1.2),
+                          fontSize: 27, color: Colors.black87, height: 1.2),
                     ),
                     SizedBox(height: size.height * 0.04),
                     _buildTextField("Email", _emailController),
@@ -319,7 +323,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: Colors.black87,
+                              decoration:
+                                  TextDecoration.underline, // Added underline
                             ),
                           ),
                         ),
@@ -328,29 +334,34 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(height: size.height * 0.04),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25),
-                      child: Container(
-                        width: size.width,
-                        height: 65,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _login, // or _register
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(
+                              0xFF8773F8), // Updated color to match onboarding
+                          foregroundColor: Colors.white,
+                          elevation: 0, // Removed elevation for a flatter look
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                                12), // Matched border radius
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 22),
                         ),
-                        child: TextButton(
-                          onPressed: _isLoading ? null : _login,
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Color(0xFF6C63FF)),
-                                )
-                              : const Text(
-                                  "Se connecter",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF6C63FF),
-                                    fontSize: 22,
-                                  ),
+                        child: _isLoading
+                            ? CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 2,
+                              )
+                            : Text(
+                                "SE CONNECTER", // or "S'INSCRIRE"
+                                style: const TextStyle(
+                                  fontFamily:
+                                      'Sen', // Added font family if used in onboarding
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 22,
                                 ),
-                        ),
+                              ),
                       ),
                     ),
                     SizedBox(height: size.height * 0.07),
@@ -361,19 +372,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           MaterialPageRoute(
                               builder: (context) => RegisterScreen()),
                         ),
-                        child: Text.rich(
+                        child: const Text.rich(
                           TextSpan(
                             text: "Pas encore de compte ? ",
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: Colors.black87,
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
                             ),
-                            children: const [
+                            children: [
                               TextSpan(
                                 text: "S'inscrire",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Color(0xFF8B5CF6),
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
