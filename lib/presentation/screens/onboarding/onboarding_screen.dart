@@ -1,5 +1,5 @@
 // lib/presentation/screens/onboarding/onboarding_screen.dart
-import 'package:event_app/presentation/screens/auth/login_screen.dart';
+import 'package:event_app/presentation/screens/auth/auth_screen.dart';
 import 'package:flutter/material.dart';
 import 'widgets/onboarding_content.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -50,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       // Naviguer vers l'écran de connexion
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
+        MaterialPageRoute(builder: (context) => AuthScreen()),
       );
     }
   }
@@ -120,7 +120,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     // Naviguer vers la page de login
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      MaterialPageRoute(builder: (context) => AuthScreen()),
                     );
                   },
                   child: const Text(

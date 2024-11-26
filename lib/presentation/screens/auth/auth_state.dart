@@ -81,7 +81,10 @@ class AuthState extends ChangeNotifier {
       await _authService.signInWithGoogle();
       _clearError();
     } catch (e) {
-      _setError(e.toString());
+      // Message d'erreur plus explicite pour l'utilisateur
+      _setError(e.toString().contains('expiré')
+          ? 'La connexion a pris trop de temps. Vérifiez votre connexion internet.'
+          : 'Erreur de connexion Google. Veuillez réessayer.');
     } finally {
       _setLoading(false);
     }

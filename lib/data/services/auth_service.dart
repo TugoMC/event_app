@@ -1,4 +1,6 @@
 // lib\data\services\auth_service.dart
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -38,9 +40,27 @@ class AuthService {
   // Connexion avec Google
   Future<UserCredential> signInWithGoogle() async {
     try {
+      // Configuration explicite du GoogleSignIn pour différents appareils
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+        // Ajoutez des paramètres spécifiques pour améliorer la compatibilité
+        signInOption: SignInOption.standard,
+      );
+
+      // Désactiver le rechargement automatique du compte précédent
+      await googleSignIn.signOut();
+
       print('Début de la connexion Google');
 
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser =
+          await googleSignIn.signIn().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('Délai de connexion Google dépassé');
+          throw 'La connexion a expiré. Veuillez réessayer.';
+        },
+      );
+
       print('GoogleSignInAccount: ${googleUser?.email}');
 
       if (googleUser == null) {
@@ -51,8 +71,15 @@ class AuthService {
       print('Obtention des tokens d\'authentification');
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      print('Access Token obtenu: ${googleAuth.accessToken != null}');
-      print('ID Token obtenu: ${googleAuth.idToken != null}');
+
+      // Vérification supplémentaire des tokens
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        print('Tokens manquants');
+        throw 'Impossible d\'obtenir les jetons d\'authentification';
+      }
+
+      print('Access Token obtenu: ${googleAuth.accessToken}');
+      print('ID Token obtenu: ${googleAuth.idToken}');
 
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
@@ -60,16 +87,27 @@ class AuthService {
       );
 
       print('Connexion à Firebase');
-      final userCredential = await _auth.signInWithCredential(credential);
+      final userCredential =
+          await _auth.signInWithCredential(credential).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          print('Délai de connexion Firebase dépassé');
+          throw 'La connexion a expiré. Veuillez réessayer.';
+        },
+      );
+
       print('Connexion réussie pour: ${userCredential.user?.email}');
 
       return userCredential;
     } on FirebaseAuthException catch (e) {
       print('FirebaseAuthException: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
+    } on TimeoutException catch (e) {
+      print('Timeout: $e');
+      throw 'La connexion a pris trop de temps. Vérifiez votre connexion internet.';
     } catch (e) {
       print('Autre erreur: $e');
-      throw e.toString();
+      throw 'Erreur de connexion Google : ${e.toString()}';
     }
   }
 
