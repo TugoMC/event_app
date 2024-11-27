@@ -1,5 +1,5 @@
 import 'package:event_app/presentation/screens/auth/auth_screen.dart';
-import 'package:event_app/presentation/screens/auth/login_screen.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';

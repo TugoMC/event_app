@@ -2,6 +2,7 @@ import 'package:event_app/data/models/activity.dart';
 import 'package:event_app/data/models/city.dart';
 import 'package:event_app/data/models/commune.dart';
 import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/data/models/recommendations.dart';
 import 'package:event_app/data/models/review.dart';
 import 'package:event_app/presentation/screens/communes/all_commune.dart';
 import 'package:event_app/presentation/screens/dashboard/dashboard_screen.dart';
@@ -484,103 +485,71 @@ class _HomeScreenState extends State<HomeScreen> {
                     // Mise à jour du code dans le StreamBuilder des Event Spaces
                     StreamBuilder<QuerySnapshot>(
                       stream: firestore
-                          .collection('event_spaces')
+                          .collection('recommendations')
                           .where('isActive', isEqualTo: true)
-                          .limit(10)
                           .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
+                      builder: (context, recommendationSnapshot) {
+                        if (recommendationSnapshot.hasError) {
                           return const Center(
                               child: Text('Une erreur est survenue'));
                         }
 
-                        if (!snapshot.hasData) {
-                          return Column(
-                            children: List.generate(
-                              3, // Nombre d'éléments shimmer à afficher
-                              (index) => const LocationCardShimmer(),
-                            ),
-                          );
+                        if (!recommendationSnapshot.hasData) {
+                          return const LocationCardShimmer();
                         }
 
-                        try {
-                          final eventSpaces = snapshot.data!.docs.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-                            return EventSpace(
-                              id: doc.id,
-                              name: data['name'] as String,
-                              description: data['description'] as String,
-                              commune: Commune.fromJson(
-                                  data['commune'] as Map<String, dynamic>),
-                              city: City.fromJson(
-                                  data['city'] as Map<String, dynamic>),
-                              activities: (data['activities'] as List)
-                                  .map((activity) => Activity.fromJson(
-                                      activity as Map<String, dynamic>))
-                                  .toList(),
-                              reviews: (data['reviews'] as List)
-                                  .map((review) => Review.fromJson(
-                                      review as Map<String, dynamic>))
-                                  .toList(),
-                              hours: data['hours'] as String,
-                              price: (data['price'] as num).toDouble(),
-                              phoneNumber: data['phoneNumber'] as String,
-                              photoUrls: List<String>.from(data['photoUrls']),
-                              location: data['location'] as String,
-                              createdAt:
-                                  DateTime.parse(data['createdAt'] as String),
-                              updatedAt: data['updatedAt'] != null
-                                  ? DateTime.parse(data['updatedAt'] as String)
-                                  : null,
-                              isActive: data['isActive'] as bool? ?? true,
-                              createdBy: data['createdBy'] as String,
-                            );
-                          }).toList();
+                        final activeRecommendations = recommendationSnapshot
+                            .data!.docs
+                            .map((doc) => Recommendations.fromJson(
+                                doc.data() as Map<String, dynamic>))
+                            .toList();
 
-                          if (eventSpaces.isEmpty) {
-                            return const Center(
-                              child:
-                                  Text('Aucun espace événementiel disponible'),
-                            );
-                          }
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: eventSpaces.map((space) {
-                              return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) =>
-                                          EventSpaceDetailScreen(
-                                        eventSpace: space,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: LocationCard(
-                                  id: space.id,
-                                  title: space.name,
-                                  subtitle: _formatActivities(space.activities),
-                                  hours: space.hours,
-                                  imageUrl: space.photoUrls.isNotEmpty
-                                      ? space.photoUrls.first
-                                      : null,
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        } catch (e, stackTrace) {
-                          print('Error converting data: $e');
-                          print(stackTrace);
+                        if (activeRecommendations.isEmpty) {
                           return const Center(
-                            child:
-                                Text('Erreur lors du chargement des données'),
+                            child: Text('Aucune recommandation active'),
                           );
                         }
+
+                        final activeRecommendation =
+                            activeRecommendations.first;
+                        final recommendedEventSpaces =
+                            activeRecommendation.eventSpaces;
+
+                        if (recommendedEventSpaces.isEmpty) {
+                          return const Center(
+                            child: Text('Aucun espace événementiel recommandé'),
+                          );
+                        }
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: recommendedEventSpaces.map((space) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        EventSpaceDetailScreen(
+                                      eventSpace: space,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: LocationCard(
+                                id: space.id,
+                                title: space.name,
+                                subtitle: _formatActivities(space.activities),
+                                hours: space.hours,
+                                imageUrl: space.photoUrls.isNotEmpty
+                                    ? space.photoUrls.first
+                                    : null,
+                              ),
+                            );
+                          }).toList(),
+                        );
                       },
-                    ),
+                    )
                   ],
                 ),
               ),

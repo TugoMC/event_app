@@ -5,8 +5,6 @@ import 'package:event_app/presentation/screens/home/home_screen.dart';
 import 'package:event_app/presentation/screens/auth/login_screen.dart';
 import 'package:event_app/presentation/screens/auth/register_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -17,7 +15,6 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final AuthService _authService = AuthService();
-  final _auth = FirebaseAuth.instance;
   bool _isLoading = false;
   String? _error;
 
