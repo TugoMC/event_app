@@ -15,29 +15,41 @@ class OnboardingContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Obtenir la largeur de l'écran
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 246,
-            height: 318,
-            decoration: BoxDecoration(
-              color: Colors.grey[200], // Background gris par défaut
-              borderRadius: BorderRadius.circular(12),
+          // Conteneur d'image responsive
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              // Largeur maximale de 90% de la largeur de l'écran
+              maxWidth: screenWidth * 0.9,
+              // Hauteur maximale de 40% de la largeur de l'écran pour garder un rapport hauteur/largeur proportionnel
+              maxHeight: screenWidth * 0.4,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  // En cas d'erreur de chargement ou d'absence d'image
-                  return Container(
-                    color: Colors.grey[200],
-                  );
-                },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200], // Background gris par défaut
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  imagePath,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    // En cas d'erreur de chargement ou d'absence d'image
+                    return Container(
+                      color: Colors.grey[200],
+                    );
+                  },
+                ),
               ),
             ),
           ),

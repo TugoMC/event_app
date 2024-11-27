@@ -223,6 +223,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 32),
               Center(
                 child: Text(
                   user?.displayName ?? user?.email?.split('@')[0] ?? 'User',

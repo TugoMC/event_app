@@ -317,6 +317,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 32),
               Center(
                 child: Text(
                   user?.displayName ??

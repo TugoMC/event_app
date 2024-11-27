@@ -125,7 +125,29 @@ class _HomeScreenState extends State<HomeScreen> {
                             horizontal: AppBarStyles.horizontalPadding),
                         child: Row(
                           children: [
-                            const Spacer(),
+                            Expanded(
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    const TextSpan(
+                                      text: 'Salut, ',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text:
+                                          '${user?.email?.split('@')[0] ?? "Invité"}!',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                             if (isAdmin)
                               _buildCircularButton(
                                 icon: const Icon(CupertinoIcons.square_grid_2x2,
@@ -258,40 +280,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: AppBarStyles.spaceBetweenButtonAndTitle),
-                    Container(
-                      width: double.infinity,
-                      height: AppBarStyles.titleContainerHeight,
-                      margin: EdgeInsets.symmetric(
-                          horizontal: AppBarStyles.horizontalPadding),
-                      padding: AppBarStyles.titlePadding,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius:
-                            BorderRadius.circular(AppBarStyles.borderRadius),
-                      ),
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            const TextSpan(
-                              text: 'Salut, ',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                            TextSpan(
-                              text:
-                                  '${user?.email?.split('@')[0] ?? "Invité"}!',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -323,95 +311,6 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Cities Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Villes',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const AllCitiesScreen()),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        const Text(
-                          'Voir tout',
-                          style: TextStyle(color: Colors.black),
-                        ),
-                        Icon(
-                          CupertinoIcons.chevron_forward,
-                          color: Colors.grey[600],
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // Cities Cards
-              SizedBox(
-                height: 95,
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _citiesStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return const Center(
-                          child: Text('Une erreur est survenue'));
-                    }
-
-                    if (!snapshot.hasData) {
-                      return ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: 5, // Nombre d'éléments shimmer à afficher
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(width: 12),
-                        itemBuilder: (context, index) =>
-                            const CityCardShimmer(),
-                      );
-                    }
-
-                    final cities = snapshot.data!.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      return City.fromJson(data);
-                    }).toList();
-
-                    if (cities.isEmpty) {
-                      return const Center(
-                          child: Text('Aucune ville disponible'));
-                    }
-
-                    return ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: cities.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final city = cities[index];
-                        return CityCard(
-                          id: city.id,
-                          name: city.name,
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-
               const SizedBox(height: 24),
               // Communes Section
               Row(

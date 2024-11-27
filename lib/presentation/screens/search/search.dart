@@ -366,7 +366,7 @@ class _SearchScreenState extends State<SearchScreen> {
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
-          ..._filteredCommunes!.map((commune) => GestureDetector(
+          ..._filteredCommunes!.map((commune) => InkWell(
                 onTap: () {
                   Navigator.push(
                     context,
@@ -436,7 +436,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 builder: (context, snapshot) {
                   final rating = snapshot.data ?? 0.0;
 
-                  return GestureDetector(
+                  return InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
