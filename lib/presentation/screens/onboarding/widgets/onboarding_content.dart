@@ -26,10 +26,10 @@ class OnboardingContent extends StatelessWidget {
           // Conteneur d'image responsive
           ConstrainedBox(
             constraints: BoxConstraints(
-              // Largeur maximale de 90% de la largeur de l'écran
-              maxWidth: screenWidth * 0.9,
-              // Hauteur maximale de 40% de la largeur de l'écran pour garder un rapport hauteur/largeur proportionnel
-              maxHeight: screenWidth * 0.4,
+              // Largeur maximale de 80% de la largeur de l'écran
+              maxWidth: screenWidth * 0.8,
+              // Hauteur maximale de 80% de la largeur de l'écran pour garder un rapport hauteur/largeur proportionnel
+              maxHeight: screenWidth * 0.8,
             ),
             child: Container(
               decoration: BoxDecoration(

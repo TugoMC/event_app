@@ -6,6 +6,7 @@ import 'package:event_app/presentation/screens/auth/login_screen.dart';
 import 'package:event_app/presentation/screens/auth/register_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -104,7 +105,7 @@ class _AuthScreenState extends State<AuthScreen> {
               children: [
                 // Top Image Container
                 Container(
-                  height: constraints.maxHeight * 0.30,
+                  height: constraints.maxHeight * 0.35,
                   decoration: const BoxDecoration(
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(40),

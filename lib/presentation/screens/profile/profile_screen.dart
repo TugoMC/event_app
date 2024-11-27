@@ -5,6 +5,8 @@ import 'package:event_app/presentation/screens/profile/user_review_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _ProfileStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -29,6 +31,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  bool _isLocationEnabled = false;
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
@@ -52,6 +55,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else if (_scrollController.offset <= _ProfileStyles.scrollThreshold &&
         _isScrolled) {
       setState(() => _isScrolled = false);
+    }
+  }
+
+  Future<void> _checkLocationStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLocationEnabled = prefs.getBool('locationEnabled') ?? false;
+    });
+  }
+
+  Future<void> _toggleLocationPermission() async {
+    final status = await Permission.location.request();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    if (status == PermissionStatus.granted) {
+      await prefs.setBool('locationEnabled', true);
+      setState(() {
+        _isLocationEnabled = true;
+      });
+
+      // Afficher un message de succès
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Localisation activée avec succès'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else if (status == PermissionStatus.denied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Autorisation de localisation refusée'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (status == PermissionStatus.permanentlyDenied) {
+      // Guide l'utilisateur vers les paramètres de l'application
+      await openAppSettings();
     }
   }
 
@@ -369,6 +410,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         builder: (context) => const UserReviewsScreen()),
                   );
                 },
+              ),
+              _buildMenuItem(
+                icon: Icon(
+                    _isLocationEnabled ? Icons.location_on : Icons.location_off,
+                    color: _isLocationEnabled
+                        ? Colors.green[400]
+                        : Colors.grey[400]),
+                title: _isLocationEnabled
+                    ? 'Localisation activée'
+                    : 'Activer la localisation',
+                onTap: _toggleLocationPermission,
+                showArrow: false,
+                textColor: _isLocationEnabled ? Colors.green : Colors.black,
               ),
               const SizedBox(height: 32),
               _buildMenuItem(

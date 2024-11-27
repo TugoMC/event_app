@@ -1,6 +1,7 @@
 // lib/presentation/screens/onboarding/onboarding_screen.dart
 import 'package:event_app/presentation/screens/auth/auth_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'widgets/onboarding_content.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +30,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "imagePath": "assets/images/onboarding2.png",
     },
     {
+      "title": "Localisation personnalisée",
+      "description":
+          "Voulez-vous que nous vous suggérions des espaces événementiels près de chez vous ? Activez la localisation pour une expérience plus pertinente.",
+      "imagePath": "assets/images/onboarding_location.png",
+    },
+    {
       "title": "Des souvenirs spéciaux",
       "description":
           "Des espaces vérifiés et des avis authentiques pour faire de chaque événement une réussite.",
@@ -36,12 +43,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
   ];
 
+  Future<bool> _requestLocationPermission() async {
+    final status = await Permission.location.request();
+    return status == PermissionStatus.granted;
+  }
+
   void _nextPage() async {
     if (_currentPage < onboardingData.length - 1) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.ease,
-      );
+      if (_currentPage == 2) {
+        // Page de localisation
+        bool permissionGranted = await _requestLocationPermission();
+
+        if (permissionGranted) {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.ease,
+          );
+        } else {
+          // Optionnel : Afficher un message si la permission est refusée
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'La localisation est recommandée pour une meilleure expérience'),
+            ),
+          );
+        }
+      } else {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.ease,
+        );
+      }
     } else {
       // Marquer l'onboarding comme terminé et passer à l'écran principal
       SharedPreferences prefs = await SharedPreferences.getInstance();
