@@ -575,15 +575,28 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToSection(GlobalKey key) {
-    final RenderObject? renderObject = key.currentContext?.findRenderObject();
-    if (renderObject is RenderBox) {
-      final offset = renderObject.localToGlobal(Offset.zero).dy -
-          AppBarStyles.appBarTotalHeight;
-      _scrollController.animateTo(
-        offset,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+    switch (key) {
+      case GlobalKey key when key == _communesKey:
+        _scrollController.animateTo(
+          0, // Position de départ
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        break;
+      case GlobalKey key when key == _suggestionsKey:
+        _scrollController.animateTo(
+          200, // Ajustez cette valeur en fonction de la mise en page
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        break;
+      case GlobalKey key when key == _nearbyKey:
+        _scrollController.animateTo(
+          1000, // Ajustez cette valeur en fonction de la mise en page
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        break;
     }
   }
 
