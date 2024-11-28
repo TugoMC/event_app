@@ -39,6 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkLocationStatus();
   }
 
   @override
@@ -60,13 +61,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _checkLocationStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Vérifier le statut réel de la permission de localisation
+    PermissionStatus status = await Permission.location.status;
+
     setState(() {
-      _isLocationEnabled = prefs.getBool('locationEnabled') ?? false;
+      // La localisation est activée uniquement si la permission est accordée
+      _isLocationEnabled = status == PermissionStatus.granted;
     });
   }
 
   Future<void> _toggleLocationPermission() async {
-    final status = await Permission.location.request();
+    PermissionStatus status = await Permission.location.request();
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -76,7 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLocationEnabled = true;
       });
 
-      // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Localisation activée avec succès'),
@@ -84,6 +89,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     } else if (status == PermissionStatus.denied) {
+      await prefs.setBool('locationEnabled', false);
+      setState(() {
+        _isLocationEnabled = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Autorisation de localisation refusée'),
@@ -91,6 +101,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     } else if (status == PermissionStatus.permanentlyDenied) {
+      await prefs.setBool('locationEnabled', false);
+      setState(() {
+        _isLocationEnabled = false;
+      });
+
       // Guide l'utilisateur vers les paramètres de l'application
       await openAppSettings();
     }
@@ -106,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin:
           EdgeInsets.symmetric(horizontal: _ProfileStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -275,7 +290,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           horizontal: _ProfileStyles.horizontalPadding),
                       padding: _ProfileStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius:
                             BorderRadius.circular(_ProfileStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),

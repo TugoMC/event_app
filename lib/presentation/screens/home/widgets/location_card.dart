@@ -39,9 +39,6 @@ class LocationCard extends StatelessWidget {
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            // Calcul de la hauteur d'image adaptative
-            final imageHeight = constraints.maxWidth > 600 ? 200.0 : 160.0;
-
             return Container(
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(

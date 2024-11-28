@@ -3,6 +3,7 @@ import 'city.dart';
 import 'commune.dart';
 import 'favorite.dart';
 import 'review.dart';
+import 'package:geolocator/geolocator.dart';
 
 class EventSpace {
   final String id;
@@ -230,4 +231,57 @@ class EventSpace {
       version: json['version'] ?? 1,
     );
   }
+}
+
+extension EventSpaceGeolocation on EventSpace {
+  // Méthode pour extraire les coordonnées à partir d'un lien Google Maps
+  LatLng? extractCoordinatesFromLocation() {
+    // Regex pour extraire les coordonnées du format Google Maps URL
+    final RegExp coordPattern = RegExp(r'@([-\d.]+),([-\d.]+)');
+
+    // Si les coordonnées ne sont pas dans le format @lat,lon, essayez le format alternatif
+    final matchAtStyle = coordPattern.firstMatch(location);
+    if (matchAtStyle != null) {
+      final latitude = double.tryParse(matchAtStyle.group(1)!);
+      final longitude = double.tryParse(matchAtStyle.group(2)!);
+
+      if (latitude != null && longitude != null) {
+        return LatLng(latitude, longitude);
+      }
+    }
+
+    // Regex pour extraire les coordonnées à partir du format de lien que vous avez fourni
+    final RegExp altCoordPattern = RegExp(r'@([-\d.]+),([-\d.]+),');
+    final matchAltStyle = altCoordPattern.firstMatch(location);
+
+    if (matchAltStyle != null) {
+      final latitude = double.tryParse(matchAltStyle.group(1)!);
+      final longitude = double.tryParse(matchAltStyle.group(2)!);
+
+      if (latitude != null && longitude != null) {
+        return LatLng(latitude, longitude);
+      }
+    }
+
+    return null;
+  }
+
+  // Calcule la distance entre deux points géographiques
+  double calculateDistance(LatLng userLocation) {
+    final spaceCoords = extractCoordinatesFromLocation();
+
+    if (spaceCoords == null) {
+      return double.infinity; // Distance maximale si coordonnées non trouvées
+    }
+
+    return Geolocator.distanceBetween(userLocation.latitude,
+        userLocation.longitude, spaceCoords.latitude, spaceCoords.longitude);
+  }
+}
+
+class LatLng {
+  final double latitude;
+  final double longitude;
+
+  const LatLng(this.latitude, this.longitude);
 }

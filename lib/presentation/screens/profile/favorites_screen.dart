@@ -82,7 +82,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       margin: EdgeInsets.symmetric(
           horizontal: _FavoritesStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -150,7 +150,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                           horizontal: _FavoritesStyles.horizontalPadding),
                       padding: _FavoritesStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(
                             _FavoritesStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),

@@ -164,7 +164,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Colors.transparent,
           boxShadow: _isScrolled
               ? [
                   BoxShadow(
@@ -515,7 +515,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchController.text.isNotEmpty || _selectedActivities.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
       body: SingleChildScrollView(

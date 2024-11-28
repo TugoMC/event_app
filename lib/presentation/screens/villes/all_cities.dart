@@ -68,7 +68,7 @@ class _AllCitiesScreenState extends State<AllCitiesScreen> {
       margin:
           EdgeInsets.symmetric(horizontal: _AppBarStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -103,7 +103,7 @@ class _AllCitiesScreenState extends State<AllCitiesScreen> {
               : null,
         ),
         child: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           elevation: 0,
           toolbarHeight: appBarHeight,
           automaticallyImplyLeading: false,
@@ -144,7 +144,7 @@ class _AllCitiesScreenState extends State<AllCitiesScreen> {
                           horizontal: _AppBarStyles.horizontalPadding),
                       padding: _AppBarStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius:
                             BorderRadius.circular(_AppBarStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),

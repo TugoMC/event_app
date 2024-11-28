@@ -67,7 +67,7 @@ class _UserReviewsScreenState extends State<UserReviewsScreen> {
       margin:
           EdgeInsets.symmetric(horizontal: _ReviewStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -134,7 +134,7 @@ class _UserReviewsScreenState extends State<UserReviewsScreen> {
                           horizontal: _ReviewStyles.horizontalPadding),
                       padding: _ReviewStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius:
                             BorderRadius.circular(_ReviewStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),

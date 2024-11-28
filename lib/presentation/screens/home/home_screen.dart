@@ -17,6 +17,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,8 +29,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<EventSpace> _nearbyEventSpaces = [];
+  Position? _currentPosition;
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  bool _isLocationEnabled = false;
 
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
   final user = FirebaseAuth.instance.currentUser;
@@ -42,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkLocationStatus();
   }
 
   @override
@@ -52,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onScroll() {
+    // Gestion de l'animation de l'AppBar
     if (_scrollController.offset > AppBarStyles.scrollThreshold &&
         !_isScrolled) {
       setState(() => _isScrolled = true);
@@ -59,6 +67,245 @@ class _HomeScreenState extends State<HomeScreen> {
         _isScrolled) {
       setState(() => _isScrolled = false);
     }
+
+    // Nouvelle logique pour détecter la section visible
+    final communesRenderBox =
+        _communesKey.currentContext?.findRenderObject() as RenderBox?;
+    final suggestionsRenderBox =
+        _suggestionsKey.currentContext?.findRenderObject() as RenderBox?;
+    final nearbyRenderBox =
+        _nearbyKey.currentContext?.findRenderObject() as RenderBox?;
+
+    if (communesRenderBox == null ||
+        suggestionsRenderBox == null ||
+        nearbyRenderBox == null) return;
+
+    final screenHeight = MediaQuery.of(context).size.height;
+    final scrollOffset =
+        _scrollController.offset + AppBarStyles.appBarTotalHeight;
+
+    final communesPosition = communesRenderBox.localToGlobal(Offset.zero).dy;
+    final suggestionsPosition =
+        suggestionsRenderBox.localToGlobal(Offset.zero).dy;
+    final nearbyPosition = nearbyRenderBox.localToGlobal(Offset.zero).dy;
+
+    String newSelectedSection;
+
+    if (scrollOffset >= communesPosition &&
+        scrollOffset < suggestionsPosition) {
+      newSelectedSection = 'Communes';
+    } else if (scrollOffset >= suggestionsPosition &&
+        scrollOffset < nearbyPosition) {
+      newSelectedSection = 'Suggestions';
+    } else if (scrollOffset >= nearbyPosition) {
+      newSelectedSection = 'Nearby';
+    } else {
+      return; // Si aucune section n'est clairement sélectionnée
+    }
+
+    if (newSelectedSection != _selectedSection) {
+      setState(() {
+        _selectedSection = newSelectedSection;
+      });
+    }
+  }
+
+  Future<void> _checkLocationStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Vérifier le statut réel de la permission de localisation
+    PermissionStatus status = await Permission.location.status;
+
+    setState(() {
+      // La localisation est activée uniquement si la permission est accordée
+      _isLocationEnabled = status == PermissionStatus.granted;
+    });
+
+    if (_isLocationEnabled) {
+      await _getCurrentPosition();
+    }
+  }
+
+  Future<void> _getCurrentPosition() async {
+    try {
+      _currentPosition = await Geolocator.getCurrentPosition();
+
+      // Récupérer tous les espaces événementiels
+      final eventSpacesSnapshot = await firestore
+          .collection('event_spaces')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      final allEventSpaces = eventSpacesSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return EventSpace.fromJson(data);
+      }).toList();
+
+      // Filtrer les espaces proches (dans un rayon de 5 km)
+      final userLocation =
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+
+      setState(() {
+        _nearbyEventSpaces = allEventSpaces.where((space) {
+          final distance = space.calculateDistance(userLocation);
+          return distance <= 5000; // 5 km
+        }).toList()
+          ..sort((a, b) => a
+              .calculateDistance(userLocation)
+              .compareTo(b.calculateDistance(userLocation)));
+      });
+    } catch (e) {
+      print('Erreur lors de la récupération de la position: $e');
+    }
+  }
+
+  Future<void> _checkLocationPermissionAndGetLocation() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool locationEnabled = prefs.getBool('locationEnabled') ?? false;
+
+    if (!locationEnabled) {
+      setState(() {
+        _currentPosition = null;
+        _nearbyEventSpaces = [];
+        return;
+      });
+    }
+
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Test si les services de localisation sont activés
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // Les services de localisation sont désactivés
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Les permissions sont refusées
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Les permissions sont définitivement refusées
+      return;
+    }
+
+    // Obtenir la position actuelle
+    _currentPosition = await Geolocator.getCurrentPosition();
+
+    // Récupérer tous les espaces événementiels
+    final eventSpacesSnapshot = await firestore
+        .collection('event_spaces')
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    final allEventSpaces = eventSpacesSnapshot.docs.map((doc) {
+      final data = doc.data();
+      return EventSpace.fromJson(data);
+    }).toList();
+
+    // Filtrer les espaces proches (par exemple, dans un rayon de 5 km)
+    final userLocation =
+        LatLng(_currentPosition!.latitude, _currentPosition!.longitude);
+
+    setState(() {
+      _nearbyEventSpaces = allEventSpaces.where((space) {
+        final distance = space.calculateDistance(userLocation);
+        return distance <= 5000; // 5 km
+      }).toList()
+        ..sort((a, b) => a
+            .calculateDistance(userLocation)
+            .compareTo(b.calculateDistance(userLocation)));
+    });
+  }
+
+  Future<void> _toggleLocationPermission() async {
+    final status = await Permission.location.request();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    if (status == PermissionStatus.granted) {
+      await prefs.setBool('locationEnabled', true);
+      await _checkLocationPermissionAndGetLocation();
+
+      // Afficher un message de succès
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Localisation activée avec succès'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else if (status == PermissionStatus.denied) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Autorisation de localisation refusée'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (status == PermissionStatus.permanentlyDenied) {
+      // Guide l'utilisateur vers les paramètres de l'application
+      await openAppSettings();
+    }
+  }
+
+  Widget _buildNearbySection() {
+    if (!_isLocationEnabled) {
+      return Center(
+        child: Column(
+          children: [
+            const Text(
+              'Activez la localisation pour voir les espaces évenementiels proches de chez vous.',
+              textAlign: TextAlign.center,
+            ),
+            TextButton(
+              onPressed: _checkLocationStatus,
+              child: const Text('Actualiser'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_currentPosition == null) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_nearbyEventSpaces.isEmpty) {
+      return const Center(
+        child: Text('Aucun espace événementiel trouvé.'),
+      );
+    }
+
+    return Column(
+      children: _nearbyEventSpaces.map((space) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EventSpaceDetailScreen(
+                  eventSpace: space,
+                ),
+              ),
+            );
+          },
+          child: LocationCard(
+            id: space.id,
+            title: space.name,
+            subtitle: _formatActivities(space.activities),
+            hours: space.hours,
+            imageUrl: space.photoUrls.isNotEmpty ? space.photoUrls.first : null,
+          ),
+        );
+      }).toList(),
+    );
   }
 
   Widget _buildCircularButton({
@@ -274,68 +521,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedSection = 'Communes';
-                        });
-                        _scrollToSection(_communesKey);
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: _selectedSection == 'Communes'
-                            ? const Color(0xFFC3B9FB)
-                            : Colors.transparent,
-                        foregroundColor: _selectedSection == 'Communes'
-                            ? Colors.white
-                            : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text('Communes'),
-                    ),
+                    _buildNavButton(
+                        text: 'Communes',
+                        section: 'Communes',
+                        onPressed: () => _navigateToSection(_communesKey)),
                     const SizedBox(width: 10),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedSection = 'Suggestions';
-                        });
-                        _scrollToSection(_suggestionsKey);
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: _selectedSection == 'Suggestions'
-                            ? const Color(0xFFC3B9FB)
-                            : Colors.transparent,
-                        foregroundColor: _selectedSection == 'Suggestions'
-                            ? Colors.white
-                            : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text('Suggestions'),
-                    ),
+                    _buildNavButton(
+                        text: 'Suggestions',
+                        section: 'Suggestions',
+                        onPressed: () => _navigateToSection(_suggestionsKey)),
                     const SizedBox(width: 10),
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedSection = 'Nearby';
-                        });
-                        _scrollToSection(_nearbyKey);
-                      },
-                      style: TextButton.styleFrom(
-                        backgroundColor: _selectedSection == 'Nearby'
-                            ? const Color(0xFFC3B9FB)
-                            : Colors.transparent,
-                        foregroundColor: _selectedSection == 'Nearby'
-                            ? Colors.white
-                            : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text('Proche de chez moi'),
-                    ),
+                    _buildNavButton(
+                        text: 'Proche de chez moi',
+                        section: 'Nearby',
+                        onPressed: () => _navigateToSection(_nearbyKey)),
                   ],
                 ),
               ),
@@ -344,6 +543,48 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildNavButton(
+      {required String text,
+      required String section,
+      required VoidCallback onPressed}) {
+    final isSelected = _selectedSection == section;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        color: isSelected ? const Color(0xFFC3B9FB) : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: TextButton(
+        onPressed: () {
+          onPressed();
+          setState(() {
+            _selectedSection = section;
+          });
+        },
+        style: TextButton.styleFrom(
+          foregroundColor: isSelected ? Colors.white : Colors.black,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        ),
+        child: Text(text),
+      ),
+    );
+  }
+
+  void _navigateToSection(GlobalKey key) {
+    final RenderObject? renderObject = key.currentContext?.findRenderObject();
+    if (renderObject is RenderBox) {
+      final offset = renderObject.localToGlobal(Offset.zero).dy -
+          AppBarStyles.appBarTotalHeight;
+      _scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   String _formatActivities(List<Activity> activities) {
@@ -556,22 +797,22 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 30), // Nearby Section
               Container(
                 key: _nearbyKey,
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Proche de chez moi',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 16),
-                    // Nearby Locations - Dynamic
-                    // ...
+                    const SizedBox(height: 16),
+                    _buildNearbySection(), // Utilisez cette méthode
+                    const SizedBox(height: 30),
                   ],
                 ),
-              ),
+              )
             ],
           ),
         ),

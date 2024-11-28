@@ -54,7 +54,7 @@ class _CommuneDetailsScreenState extends State<CommuneDetailsScreen> {
       margin:
           EdgeInsets.symmetric(horizontal: _AppBarStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),

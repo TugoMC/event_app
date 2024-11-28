@@ -74,7 +74,7 @@ class _CityDetailScreenState extends State<CityDetailScreen> {
       margin:
           EdgeInsets.symmetric(horizontal: _AppBarStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -150,7 +150,7 @@ class _CityDetailScreenState extends State<CityDetailScreen> {
                           horizontal: _AppBarStyles.horizontalPadding),
                       padding: _AppBarStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius:
                             BorderRadius.circular(_AppBarStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),

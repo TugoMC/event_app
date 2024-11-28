@@ -146,7 +146,7 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
                         horizontal: AppBarStyles.horizontalPadding),
                     padding: AppBarStyles.titlePadding,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.transparent,
                       borderRadius:
                           BorderRadius.circular(AppBarStyles.borderRadius),
                       border: Border.all(color: Colors.grey[300]!),
@@ -202,7 +202,7 @@ class _EventSpaceDetailScreenState extends State<EventSpaceDetailScreen> {
       margin:
           EdgeInsets.symmetric(horizontal: AppBarStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
