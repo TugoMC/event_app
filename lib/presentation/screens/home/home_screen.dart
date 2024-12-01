@@ -272,41 +272,66 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (_currentPosition == null) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const LocationCardShimmer();
     }
 
     if (_nearbyEventSpaces.isEmpty) {
-      return const Center(
-        child: Text('Aucun espace événementiel trouvé.'),
+      return Center(
+        child: Column(
+          children: [
+            const Text('Aucun espace événementiel trouvé.'),
+            TextButton(
+              onPressed: _refreshNearbyEventSpaces,
+              child: const Text('Actualiser'),
+            ),
+          ],
+        ),
       );
     }
 
     return Column(
-      children: _nearbyEventSpaces.map((space) {
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => EventSpaceDetailScreen(
-                  eventSpace: space,
-                ),
+      children: [
+        Column(
+          children: _nearbyEventSpaces.map((space) {
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EventSpaceDetailScreen(
+                      eventSpace: space,
+                    ),
+                  ),
+                );
+              },
+              child: LocationCard(
+                id: space.id,
+                title: space.name,
+                activities:
+                    space.activities.map((activity) => activity.type).toList(),
+                hours: space.hours,
+                imageUrl:
+                    space.photoUrls.isNotEmpty ? space.photoUrls.first : null,
               ),
             );
-          },
-          child: LocationCard(
-            id: space.id,
-            title: space.name,
-            activities:
-                space.activities.map((activity) => activity.type).toList(),
-            hours: space.hours,
-            imageUrl: space.photoUrls.isNotEmpty ? space.photoUrls.first : null,
-          ),
-        );
-      }).toList(),
+          }).toList(),
+        ),
+        TextButton(
+          onPressed: _refreshNearbyEventSpaces,
+          child: const Text('Actualiser'),
+        ),
+      ],
     );
+  }
+
+  void _refreshNearbyEventSpaces() async {
+    setState(() {
+      _nearbyEventSpaces.clear(); // Clear previous results
+      _currentPosition = null; // Reset position to trigger loading
+    });
+
+    // Re-check location and fetch nearby spaces
+    await _checkLocationStatus();
   }
 
   Widget _buildCircularButton({
@@ -606,6 +631,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _selectedSection = 'Communes';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
