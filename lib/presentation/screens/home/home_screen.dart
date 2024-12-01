@@ -299,7 +299,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: LocationCard(
             id: space.id,
             title: space.name,
-            subtitle: _formatActivities(space.activities),
+            activities:
+                space.activities.map((activity) => activity.type).toList(),
             hours: space.hours,
             imageUrl: space.photoUrls.isNotEmpty ? space.photoUrls.first : null,
           ),
@@ -794,8 +795,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: LocationCard(
                                 id: eventSpaceOrder.eventSpace.id,
                                 title: eventSpaceOrder.eventSpace.name,
-                                subtitle:
-                                    eventSpaceOrder.eventSpace.description,
+                                activities: eventSpaceOrder
+                                    .eventSpace.activities
+                                    .map((activity) => activity.type)
+                                    .toList(),
                                 hours: eventSpaceOrder.eventSpace.hours,
                                 imageUrl: eventSpaceOrder
                                         .eventSpace.photoUrls.isNotEmpty

@@ -6,20 +6,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class LocationCard extends StatelessWidget {
   final String id;
   final String title;
-  final String subtitle;
+  final List<String> activities; // Change from subtitle to activities
   final String hours;
   final String? imageUrl;
-  final EventSpaceOrder? eventSpaceOrder; // New optional parameter
+  final EventSpaceOrder? eventSpaceOrder;
 
   const LocationCard({
     super.key,
     required this.id,
     required this.title,
-    required this.subtitle,
+    required this.activities, // Update constructor
     required this.hours,
     this.imageUrl,
-    this.eventSpaceOrder, // Add this to constructor
+    this.eventSpaceOrder,
   });
+
+  String _formatActivities() {
+    return activities.join(' - ');
+  }
 
   Future<double> _calculateAverageRating() async {
     final querySnapshot = await FirebaseFirestore.instance
@@ -47,16 +51,6 @@ class LocationCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: eventSpaceOrder != null
-                    ? [
-                        BoxShadow(
-                          color: Colors.purple.withOpacity(0.2),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : null, // Add subtle shadow for recommended items
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -109,7 +103,7 @@ class LocationCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            subtitle,
+                            _formatActivities(), // Use the new activities formatting method
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,

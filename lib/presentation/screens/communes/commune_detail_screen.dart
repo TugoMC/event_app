@@ -284,7 +284,9 @@ class _CommuneDetailsScreenState extends State<CommuneDetailsScreen> {
                   child: LocationCard(
                     id: space.id,
                     title: space.name,
-                    subtitle: _formatActivities(space.activities),
+                    activities: space.activities
+                        .map((activity) => activity.type)
+                        .toList(),
                     hours: space.hours,
                     imageUrl: space.photoUrls.isNotEmpty
                         ? space.photoUrls.first
