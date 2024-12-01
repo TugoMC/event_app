@@ -515,7 +515,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _searchController.text.isNotEmpty || _selectedActivities.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context, showBanner: true),
       body: SingleChildScrollView(

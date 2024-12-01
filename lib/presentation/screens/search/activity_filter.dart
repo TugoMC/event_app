@@ -264,7 +264,7 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             child: Text(
-                              'Voir les résultats',
+                              'Rechercher',
                               style: Theme.of(context)
                                   .textTheme
                                   .labelLarge

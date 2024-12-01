@@ -13,7 +13,7 @@
     <!-- Permission pour l'accès à la caméra (pour la capture de photos) -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <application
-        android:label="event_app"
+        android:label="anabe"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <meta-data
