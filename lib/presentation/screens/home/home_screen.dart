@@ -777,7 +777,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: recommendedEventSpaces.map((space) {
+                          children:
+                              recommendedEventSpaces.map((eventSpaceOrder) {
                             return GestureDetector(
                               onTap: () {
                                 Navigator.push(
@@ -785,25 +786,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                   MaterialPageRoute(
                                     builder: (context) =>
                                         EventSpaceDetailScreen(
-                                      eventSpace: space,
+                                      eventSpace: eventSpaceOrder.eventSpace,
                                     ),
                                   ),
                                 );
                               },
                               child: LocationCard(
-                                id: space.id,
-                                title: space.name,
-                                subtitle: _formatActivities(space.activities),
-                                hours: space.hours,
-                                imageUrl: space.photoUrls.isNotEmpty
-                                    ? space.photoUrls.first
+                                id: eventSpaceOrder.eventSpace.id,
+                                title: eventSpaceOrder.eventSpace.name,
+                                subtitle:
+                                    eventSpaceOrder.eventSpace.description,
+                                hours: eventSpaceOrder.eventSpace.hours,
+                                imageUrl: eventSpaceOrder
+                                        .eventSpace.photoUrls.isNotEmpty
+                                    ? eventSpaceOrder.eventSpace.photoUrls.first
                                     : null,
+                                eventSpaceOrder:
+                                    eventSpaceOrder, // Pass the full EventSpaceOrder object
                               ),
                             );
                           }).toList(),
                         );
                       },
-                    )
+                    ),
                   ],
                 ),
               ),

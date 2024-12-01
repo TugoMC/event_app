@@ -1,5 +1,4 @@
 import 'package:event_app/data/models/recommendations.dart';
-import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -48,8 +47,8 @@ class RecommendationDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: recommendation.eventSpaces.length,
               itemBuilder: (context, index) {
-                final eventSpace = recommendation.eventSpaces[index];
-                return _buildEventSpaceCard(context, eventSpace);
+                final eventSpaceOrder = recommendation.eventSpaces[index];
+                return _buildEventSpaceCard(context, eventSpaceOrder);
               },
             ),
           ),
@@ -58,7 +57,9 @@ class RecommendationDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEventSpaceCard(BuildContext context, EventSpace eventSpace) {
+  Widget _buildEventSpaceCard(
+      BuildContext context, EventSpaceOrder eventSpaceOrder) {
+    final eventSpace = eventSpaceOrder.eventSpace;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
@@ -78,6 +79,11 @@ class RecommendationDetailScreen extends StatelessWidget {
               'Note moyenne: ${eventSpace.getAverageRating().toStringAsFixed(1)}',
               style: TextStyle(color: Colors.amber[700]),
             ),
+            if (eventSpaceOrder.order > 0)
+              Text(
+                'Ordre: ${eventSpaceOrder.order}',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
           ],
         ),
         leading: eventSpace.photoUrls.isNotEmpty
@@ -101,7 +107,6 @@ class RecommendationDetailScreen extends StatelessWidget {
             : null,
         trailing: const Icon(Icons.arrow_forward_ios),
         onTap: () {
-          // TODO: Naviguer vers les détails de l'espace d'événement
           Navigator.push(
             context,
             MaterialPageRoute(

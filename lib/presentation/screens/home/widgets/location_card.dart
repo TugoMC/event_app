@@ -1,3 +1,4 @@
+import 'package:event_app/data/models/recommendations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -8,6 +9,7 @@ class LocationCard extends StatelessWidget {
   final String subtitle;
   final String hours;
   final String? imageUrl;
+  final EventSpaceOrder? eventSpaceOrder; // New optional parameter
 
   const LocationCard({
     super.key,
@@ -16,6 +18,7 @@ class LocationCard extends StatelessWidget {
     required this.subtitle,
     required this.hours,
     this.imageUrl,
+    this.eventSpaceOrder, // Add this to constructor
   });
 
   Future<double> _calculateAverageRating() async {
@@ -44,6 +47,16 @@ class LocationCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
+                boxShadow: eventSpaceOrder != null
+                    ? [
+                        BoxShadow(
+                          color: Colors.purple.withOpacity(0.2),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : null, // Add subtle shadow for recommended items
               ),
               child: SingleChildScrollView(
                 child: Column(
@@ -55,13 +68,15 @@ class LocationCard extends StatelessWidget {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(10)),
+                          borderRadius: const BorderRadius.all(
+                            Radius.circular(10),
+                          ),
                         ),
                         child: imageUrl != null
                             ? ClipRRect(
-                                borderRadius:
-                                    const BorderRadius.all(Radius.circular(10)),
+                                borderRadius: const BorderRadius.all(
+                                  Radius.circular(10),
+                                ),
                                 child: Image.network(
                                   imageUrl!,
                                   fit: BoxFit.cover,

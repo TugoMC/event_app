@@ -31,21 +31,40 @@ class _RecommendationsDeletionScreenState
           .get();
 
       setState(() {
-        _recommendations = querySnapshot.docs.map((doc) {
-          final recommendationData = doc.data() as Map<String, dynamic>;
-          final recommendation = Recommendations.fromJson(recommendationData);
+        _recommendations = querySnapshot.docs
+            .map((doc) {
+              // Récupérer les données du document
+              final docData = doc.data();
 
-          return Recommendations(
-            eventSpaces: recommendation.eventSpaces,
-            userId: recommendation.userId,
-            id: doc.id, // Ajouter l'ID du document ici
-            createdAt: recommendation.createdAt,
-            updatedAt: recommendation.updatedAt,
-            version: recommendation.version,
-          );
-        }).toList();
+              // Vérifier si les données sont null ou ne sont pas un Map
+              if (docData == null || docData is! Map<String, dynamic>) {
+                print('Document invalide détecté: ${doc.id}');
+                return null;
+              }
+
+              try {
+                final recommendation = Recommendations.fromJson(docData);
+
+                return Recommendations(
+                  eventSpaces: recommendation.eventSpaces,
+                  userId: recommendation.userId,
+                  id: doc.id, // Ajouter l'ID du document ici
+                  createdAt: recommendation.createdAt,
+                  updatedAt: recommendation.updatedAt,
+                  version: recommendation.version,
+                );
+              } catch (e) {
+                print('Erreur lors du parsing du document ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<Recommendations>() // Filtrer les null
+            .toList();
 
         _isLoading = false;
+
+        // Afficher le nombre de recommandations valides
+        print('Nombre de recommandations valides: ${_recommendations.length}');
       });
     } catch (e) {
       print('Erreur lors de la récupération des recommandations: $e');

@@ -101,9 +101,17 @@ class _RecommendationsGenerationScreenState
         }),
       );
 
+      // Convert EventSpaces to EventSpaceOrder with default order
+      final eventSpacesOrders = selectedEventSpacesDetails.map((eventSpace) {
+        return EventSpaceOrder(
+          eventSpace: eventSpace,
+          order: 0, // You can modify this if you want a specific ordering logic
+        );
+      }).toList();
+
       // Créer l'objet Recommendations
       final recommendations = Recommendations(
-        eventSpaces: selectedEventSpacesDetails,
+        eventSpaces: eventSpacesOrders,
         userId: 'system', // Utiliser un identifiant système
       );
 
@@ -111,6 +119,14 @@ class _RecommendationsGenerationScreenState
       final recommendationRef = await FirebaseFirestore.instance
           .collection('recommendations')
           .add(recommendations.toJson());
+
+// Mettre à jour l'ID de la recommandation avec l'ID du document Firestore
+      final updatedRecommendation = recommendations.copyWith(
+        id: recommendationRef.id,
+      );
+
+// Mettre à jour le document avec l'ID
+      await recommendationRef.update(updatedRecommendation.toJson());
 
       // Afficher un message de succès
       if (mounted) {
