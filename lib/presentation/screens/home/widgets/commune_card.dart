@@ -14,22 +14,15 @@ class CommuneCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Utiliser MediaQuery pour obtenir les dimensions de l'écran
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Calculer les dimensions de façon responsive
     final cardWidth = screenWidth * 0.2; // 20% de la largeur de l'écran
     final minCardWidth = 70.0; // Largeur minimum
     final maxCardWidth = 100.0; // Largeur maximum
 
-    // Clamp garantit que la largeur reste dans les limites définies
     final finalWidth = cardWidth.clamp(minCardWidth, maxCardWidth);
-
-    // La hauteur du container sera 90% de sa largeur
     final containerHeight = finalWidth * 0.9;
-
-    // Hauteur totale avec un peu d'espace pour le texte
-    final totalHeight = containerHeight + 20;
+    final totalHeight = containerHeight + 20; // Gardé comme avant
 
     return GestureDetector(
       onTap: () {
@@ -75,20 +68,9 @@ class CommuneCard extends StatelessWidget {
                 ),
               ),
             ),
-            Expanded(
-              child: Center(
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                  ),
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
-                ),
-              ),
-            ),
+            // Suppression du Expanded et du Text
+            const SizedBox(
+                height: 20), // Espace vide pour conserver la hauteur totale
           ],
         ),
       ),

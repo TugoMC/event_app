@@ -176,7 +176,7 @@ class _SearchScreenState extends State<SearchScreen> {
               : null,
         ),
         child: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.white,
           elevation: 0,
           toolbarHeight: appBarHeight,
           automaticallyImplyLeading: false,
