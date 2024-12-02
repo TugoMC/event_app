@@ -101,18 +101,15 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               children: [
                 // Top Image Container
-                Container(
-                  height: constraints.maxHeight * 0.35,
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
-                    ),
-                    color: Color(0xFF8B5CF6),
-                    image: DecorationImage(
-                      image: AssetImage("images/image.png"),
-                      fit: BoxFit.cover,
-                    ),
+                ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(40),
+                  ),
+                  child: Image.asset(
+                    "assets/images/map.png",
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -151,13 +148,22 @@ class _AuthScreenState extends State<AuthScreen> {
                               padding: const EdgeInsets.only(bottom: 12),
                               child: Text(
                                 _error!,
-                                style: const TextStyle(color: Colors.red),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                ),
                               ),
                             ),
                           _buildButton(
-                            onPressed: _handleGoogleSignIn,
-                            iconPath: 'assets/icons/google.svg',
-                            text: "CONTINUER AVEC GOOGLE",
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => LoginScreen()),
+                              );
+                            },
+                            iconPath: 'assets/icons/email.svg',
+                            text: "SE CONNECTER",
                           ),
                           _buildButton(
                             onPressed: () {
@@ -171,15 +177,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             text: "S'INSCRIRE",
                           ),
                           _buildButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => LoginScreen()),
-                              );
-                            },
-                            iconPath: 'assets/icons/email.svg',
-                            text: "SE CONNECTER",
+                            onPressed: _handleGoogleSignIn,
+                            iconPath: 'assets/icons/google.svg',
+                            text: "CONTINUER AVEC GOOGLE",
                           ),
                           if (_isLoading)
                             const Padding(

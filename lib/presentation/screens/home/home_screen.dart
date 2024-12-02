@@ -618,7 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case GlobalKey key when key == _nearbyKey:
         _scrollController.animateTo(
-          1200, // Ajustez cette valeur en fonction de la mise en page
+          1980, // Ajustez cette valeur en fonction de la mise en page
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
