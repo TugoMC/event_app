@@ -290,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 ListView(
                   children: [
-                    SizedBox(height: size.height * 0.03),
+                    SizedBox(height: size.height * 0.001),
                     const Text(
                       "Bon retour !",
                       textAlign: TextAlign.center,
@@ -331,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    SizedBox(height: size.height * 0.04),
+                    SizedBox(height: size.height * 0.02),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 25),
                       child: ElevatedButton(
@@ -364,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                     ),
-                    SizedBox(height: size.height * 0.07),
+                    SizedBox(height: size.height * 0.04),
                     Center(
                       child: TextButton(
                         onPressed: () => Navigator.push(

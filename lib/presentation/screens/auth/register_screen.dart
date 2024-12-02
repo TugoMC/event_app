@@ -159,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             key: _formKey,
             child: ListView(
               children: [
-                SizedBox(height: size.height * 0.03),
+                SizedBox(height: size.height * 0.01),
                 const Text(
                   "Créer un compte",
                   textAlign: TextAlign.center,
@@ -169,7 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 15),
+                const SizedBox(height: 10),
                 const Text(
                   "Rejoignez-nous !",
                   textAlign: TextAlign.center,
@@ -179,7 +179,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     height: 1.2,
                   ),
                 ),
-                SizedBox(height: size.height * 0.04),
+                SizedBox(height: size.height * 0.02),
                 _buildTextField("Email", _emailController),
                 _buildTextField("Mot de passe", _passwordController,
                     isPassword: true),
@@ -188,7 +188,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   _confirmPasswordController,
                   isConfirmPassword: true,
                 ),
-                SizedBox(height: size.height * 0.04),
+                SizedBox(height: size.height * 0.02),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25),
                   child: ElevatedButton(
@@ -218,7 +218,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                   ),
                 ),
-                SizedBox(height: size.height * 0.07),
+                SizedBox(height: size.height * 0.04),
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.pushReplacement(

@@ -21,25 +21,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       "title": "Trouvez l'espace idéal",
       "description":
           "Découvrez des lieux uniques et adaptés à tous vos événements, des réunions intimes aux grandes célébrations.",
-      "imagePath": "assets/images/onboarding1.png",
+      "imagePath": "assets/images/onboarding_event.png",
     },
     {
       "title": "Réservation simplifiée",
       "description":
-          "Comparez, filtrez et réservez en quelques clics. Notre plateforme vous guide à chaque étape.",
-      "imagePath": "assets/images/onboarding2.png",
-    },
-    {
-      "title": "Localisation personnalisée",
-      "description":
-          "Voulez-vous que nous vous suggérions des espaces événementiels près de chez vous ? Activez la localisation pour une expérience plus pertinente.",
-      "imagePath": "assets/images/onboarding_location.png",
+          "Recherchez, filtrez et réservez en quelques clics. Notre plateforme vous guide à chaque étape.",
+      "imagePath": "assets/images/onboarding_reservation.png",
     },
     {
       "title": "Des souvenirs spéciaux",
       "description":
           "Des espaces vérifiés et des avis authentiques pour faire de chaque événement une réussite.",
-      "imagePath": "assets/images/onboarding3.png",
+      "imagePath": "assets/images/onboarding_memories.png",
+    },
+    {
+      "title": "Localisation",
+      "description":
+          "Voulez-vous que nous vous suggérions des espaces événementiels près de chez vous ?",
+      "imagePath": "assets/images/onboarding_location.png",
     },
   ];
 
@@ -50,40 +50,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() async {
     if (_currentPage < onboardingData.length - 1) {
-      if (_currentPage == 2) {
-        // Page de localisation
-        bool permissionGranted = await _requestLocationPermission();
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
+    } else {
+      // Dernière page (localisation)
+      bool permissionGranted = await _requestLocationPermission();
 
-        if (permissionGranted) {
-          _pageController.nextPage(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.ease,
-          );
-        } else {
-          // Optionnel : Afficher un message si la permission est refusée
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'La localisation est recommandée pour une meilleure expérience'),
-            ),
-          );
-        }
+      if (permissionGranted) {
+        // Marquer l'onboarding comme terminé et passer à l'écran principal
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isFirstTime', false);
+
+        // Naviguer vers l'écran de connexion
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AuthScreen()),
+        );
       } else {
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.ease,
+        // Afficher un message si la permission est refusée
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'La localisation est recommandée pour une meilleure expérience'),
+          ),
         );
       }
-    } else {
-      // Marquer l'onboarding comme terminé et passer à l'écran principal
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isFirstTime', false);
-
-      // Naviguer vers l'écran de connexion
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AuthScreen()),
-      );
     }
   }
 
