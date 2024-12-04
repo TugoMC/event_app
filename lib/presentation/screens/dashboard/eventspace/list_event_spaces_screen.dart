@@ -18,6 +18,7 @@ class _ListEventSpacesScreenState extends State<ListEventSpacesScreen> {
   List<Activity> selectedActivities = [];
   final TextEditingController _searchController = TextEditingController();
   bool _showOnlyActive = true;
+  String _lastSearchTerm = '';
 
   @override
   void dispose() {
@@ -61,16 +62,28 @@ class _ListEventSpacesScreenState extends State<ListEventSpacesScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: 'Rechercher',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        labelText: 'Rechercher',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                onChanged: (_) => setState(() {}),
+                  IconButton(
+                    icon: Icon(Icons.search),
+                    onPressed: () {
+                      setState(() {
+                        _lastSearchTerm = _searchController.text;
+                      });
+                    },
+                  ),
+                ],
               ),
             ),
             StreamBuilder<QuerySnapshot>(
