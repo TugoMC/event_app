@@ -1,3 +1,4 @@
+import 'package:event_app/presentation/screens/dashboard/notification/blogpost/blog_post_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -253,6 +254,16 @@ class _NotificationsManagementScreenState
                   // Navigation vers la suppression des notifications
                 },
               ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BlogPostListScreen()),
+                  );
+                },
+                child: const Text('Manage Blog Posts'),
+              )
             ],
           ),
         ),
