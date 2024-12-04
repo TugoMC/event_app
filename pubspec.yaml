@@ -14,8 +14,8 @@ dependencies:
   iconsax: ^0.0.8
   cupertino_icons: ^1.0.8
   get: ^4.6.5
-  firebase_core: ^3.7.0  # Mise à jour vers la dernière version stable de firebase_core
-  firebase_auth: ^5.3.2  # Vérifiez la compatibilité de firebase_auth avec la version de firebase_core
+  firebase_core: ^3.7.0 
+  firebase_auth: ^5.3.2 
   firebase_auth_web: ^5.13.3
   google_sign_in: ^6.2.2
   shared_preferences: ^2.0.16

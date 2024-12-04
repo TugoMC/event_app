@@ -20,6 +20,63 @@ class DetailsHeader extends StatelessWidget {
     return ratings.reduce((a, b) => a + b) / ratings.length;
   }
 
+  Widget _buildResponsiveContainer({
+    required IconData icon,
+    required String text,
+    Color? iconColor,
+    Color? textColor,
+    Color? backgroundColor,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Determine if we need to adjust layout for smaller screens
+        bool isNarrowScreen = constraints.maxWidth < 350;
+
+        return Container(
+          constraints: BoxConstraints(
+            minWidth: isNarrowScreen ? 80 : 100,
+            maxHeight: 40,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: isNarrowScreen ? 8 : 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: backgroundColor ?? const Color(0xFF8773F8).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: iconColor ?? const Color(0xFF8773F8),
+                size: isNarrowScreen ? 14 : 16,
+              ),
+              if (!isNarrowScreen) const SizedBox(width: 4),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: textColor ?? const Color(0xFF8773F8),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<double>(
@@ -33,85 +90,38 @@ class DetailsHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Info Row avec style amélioré
-              Row(
-                children: [
-                  if (hasReviews)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8773F8).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            CupertinoIcons.star_fill,
-                            color: Color(0xFF8773F8),
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            averageRating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8773F8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (hasReviews) const SizedBox(width: 12),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8773F8).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          CupertinoIcons.clock_fill,
-                          size: 16,
-                          color: Color(0xFF8773F8),
+              // Responsive Info Row
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.start,
+                    children: [
+                      // Rating Container (only if reviews exist)
+                      if (hasReviews)
+                        _buildResponsiveContainer(
+                          icon: CupertinoIcons.star_fill,
+                          text: averageRating.toStringAsFixed(1),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          eventSpace.hours,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF8773F8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8773F8),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${eventSpace.price.toStringAsFixed(0)} FCFA',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+
+                      // Hours Container
+                      _buildResponsiveContainer(
+                        icon: CupertinoIcons.clock_fill,
+                        text: eventSpace.hours,
                       ),
-                    ),
-                  ),
-                ],
+
+                      // Price Container
+                      _buildResponsiveContainer(
+                        icon: CupertinoIcons.circle,
+                        text: '${eventSpace.price.toStringAsFixed(0)} FCFA',
+                        backgroundColor: const Color(0xFF8773F8),
+                        iconColor: Colors.white,
+                        textColor: Colors.white,
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 24),
@@ -129,7 +139,7 @@ class DetailsHeader extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // Section téléphone avec style amélioré
+              // Phone Section (Kept mostly the same)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -167,12 +177,15 @@ class DetailsHeader extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          eventSpace.phoneNumber,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[800],
+                        Expanded(
+                          child: Text(
+                            eventSpace.phoneNumber,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

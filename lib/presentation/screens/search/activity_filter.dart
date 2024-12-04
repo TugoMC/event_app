@@ -136,86 +136,98 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
-      initialChildSize: 0.8,
+      initialChildSize: 0.9,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: CustomScrollView(
-            controller: scrollController,
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: Colors.white,
-                automaticallyImplyLeading: false,
-                title: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Filtrer par activité',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black,
-                                ),
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: CustomScrollView(
+                    controller: scrollController,
+                    slivers: [
+                      SliverAppBar(
+                        pinned: true,
+                        backgroundColor: Colors.white,
+                        automaticallyImplyLeading: false,
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Filtrer par activité',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black,
+                                    ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(CupertinoIcons.xmark,
+                                  color: Colors.black),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon:
-                          const Icon(CupertinoIcons.xmark, color: Colors.black),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: _availableActivities.isEmpty
-                    ? SliverFillRemaining(
-                        child: Center(
-                          child: Text(
-                            'Aucune activité disponible',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  fontSize: 16,
-                                  color: const Color(0xFFA0A5BA),
+                      SliverPadding(
+                        padding: const EdgeInsets.all(16),
+                        sliver: _availableActivities.isEmpty
+                            ? SliverFillRemaining(
+                                child: Center(
+                                  child: Text(
+                                    'Aucune activité disponible',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontSize: 16,
+                                          color: const Color(0xFFA0A5BA),
+                                        ),
+                                  ),
                                 ),
-                          ),
-                        ),
-                      )
-                    : SliverGrid(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childAspectRatio: 0.7,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final activity = _availableActivities[index];
-                            final isSelected =
-                                _selectedActivities.contains(activity);
-                            final count = _activityCounts[activity.type] ?? 0;
+                              )
+                            : SliverGrid(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 16,
+                                  childAspectRatio: 0.7,
+                                ),
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final activity =
+                                        _availableActivities[index];
+                                    final isSelected =
+                                        _selectedActivities.contains(activity);
+                                    final count =
+                                        _activityCounts[activity.type] ?? 0;
 
-                            return _buildActivityItem(
-                                activity, isSelected, count);
-                          },
-                          childCount: _availableActivities.length,
-                        ),
+                                    return _buildActivityItem(
+                                        activity, isSelected, count);
+                                  },
+                                  childCount: _availableActivities.length,
+                                ),
+                              ),
                       ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.all(16),
-                sliver: SliverToBoxAdapter(
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  color: Colors.white, // Explicit white background
                   child: Row(
                     children: [
                       Expanded(
@@ -279,8 +291,8 @@ class _ActivityFilterModalState extends State<ActivityFilterModal> {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
