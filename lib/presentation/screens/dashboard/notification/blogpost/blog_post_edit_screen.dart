@@ -4,6 +4,7 @@ import 'package:event_app/data/models/commune.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class BlogPostEditScreen extends StatefulWidget {
   final BlogPost? post;
@@ -35,7 +36,13 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
   String? _selectedEventSpaceId;
   EventSpace? _selectedEventSpace;
   late List<BlogTag> _tags;
-  BlogPromotionalPrice? _promotionalPrice;
+
+  // New fields for promotional pricing and validity
+  bool _isPromotional = false;
+  double? _promotionalPrice;
+  DateTime? _promotionalStartDate;
+  DateTime? _promotionalEndDate;
+  DateTime? _validUntil;
 
   List<EventSpace> _eventSpaces = [];
   bool _isLoading = true;
@@ -51,7 +58,17 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
       _description = widget.post!.description;
       _selectedEventSpaceId = widget.post!.eventSpaceId;
       _tags = List.from(widget.post!.tags);
-      _promotionalPrice = widget.post!.promotionalPrice;
+
+      // Populate promotional price fields
+      if (widget.post!.promotionalPrice != null) {
+        _isPromotional = true;
+        _promotionalPrice = widget.post!.promotionalPrice!.promotionalPrice;
+        _promotionalStartDate = widget.post!.promotionalPrice!.startDate;
+        _promotionalEndDate = widget.post!.promotionalPrice!.endDate;
+      }
+
+      // Populate validity date
+      _validUntil = widget.post!.validUntil;
     } else {
       // Initialize with default values for new post
       _title = '';
@@ -254,10 +271,59 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
   }
 
   Future<void> _savePost() async {
+    // Validate promotional price details
+    if (_isPromotional) {
+      if (_promotionalPrice == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a promotional price')),
+        );
+        return;
+      }
+      if (_promotionalStartDate == null || _promotionalEndDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Please enter promotional start and end dates')),
+        );
+        return;
+      }
+    }
+
+    // Validate limited offer tag
+    if (_tags.contains(BlogTag.offreLimitee) && _validUntil == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('A limited offer must have a validity period')),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate() && _selectedEventSpace != null) {
       _formKey.currentState!.save();
 
       try {
+        // Prepare promotional price object
+        BlogPromotionalPrice? promotionalPriceObj;
+        if (_isPromotional &&
+            _promotionalPrice != null &&
+            _promotionalStartDate != null &&
+            _promotionalEndDate != null) {
+          // Validate promotional price is lower than original price
+          if (_promotionalPrice! >= _selectedEventSpace!.price) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                      'Promotional price must be lower than original price')),
+            );
+            return;
+          }
+
+          promotionalPriceObj = BlogPromotionalPrice(
+            promotionalPrice: _promotionalPrice!,
+            startDate: _promotionalStartDate!,
+            endDate: _promotionalEndDate!,
+          );
+        }
+
         final blogPost = BlogPost(
           id: widget.post?.id, // Use existing ID if editing
           title: _title,
@@ -265,8 +331,9 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
           eventSpaceId: _selectedEventSpace!.id,
           eventSpacePrice: _selectedEventSpace!.price,
           createdAt: widget.post?.createdAt ?? DateTime.now(),
+          validUntil: _validUntil,
           tags: _tags,
-          promotionalPrice: _promotionalPrice,
+          promotionalPrice: promotionalPriceObj,
         );
 
         if (widget.post == null) {
@@ -293,6 +360,37 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
           SnackBar(content: Text('Error saving post: $e')),
         );
       }
+    }
+  }
+
+  // Date picker for promotional dates and validity
+  Future<void> _selectDate(BuildContext context,
+      {bool isValidUntil = false}) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isValidUntil) {
+          _validUntil = picked;
+        } else if (_promotionalStartDate == null) {
+          _promotionalStartDate = picked;
+        } else {
+          // Validate that end date is after start date
+          if (picked.isAfter(_promotionalStartDate!)) {
+            _promotionalEndDate = picked;
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text('End date must be after start date')),
+            );
+          }
+        }
+      });
     }
   }
 
@@ -458,9 +556,77 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
                       ))
                   .toList(),
             ),
-            const SizedBox(height: 20),
+            // Promotional Price Section
+            const SizedBox(height: 10),
+            SwitchListTile(
+              title: const Text('Promotional Pricing'),
+              value: _isPromotional,
+              onChanged: (bool value) {
+                setState(() {
+                  _isPromotional = value;
+                  if (!value) {
+                    // Reset promotional price fields
+                    _promotionalPrice = null;
+                    _promotionalStartDate = null;
+                    _promotionalEndDate = null;
+                  }
+                });
+              },
+            ),
+
+            if (_isPromotional) ...[
+              // Promotional Price Input
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Promotional Price',
+                  hintText: 'Enter promotional price',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (_isPromotional && (value == null || value.isEmpty)) {
+                    return 'Please enter a promotional price';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  _promotionalPrice =
+                      value != null ? double.parse(value) : null;
+                },
+              ),
+
+              // Promotional Date Pickers
+              ListTile(
+                title: Text(
+                    'Promotional Start Date: ${_promotionalStartDate != null ? DateFormat('dd/MM/yyyy').format(_promotionalStartDate!) : 'Select start date'}'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(context),
+                ),
+              ),
+              ListTile(
+                title: Text(
+                    'Promotional End Date: ${_promotionalEndDate != null ? DateFormat('dd/MM/yyyy').format(_promotionalEndDate!) : 'Select end date'}'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(context),
+                ),
+              ),
+            ],
+
+            // Validity Date for Limited Offers
+            if (_tags.contains(BlogTag.offreLimitee)) ...[
+              ListTile(
+                title: Text(
+                    'Validity Date: ${_validUntil != null ? DateFormat('dd/MM/yyyy').format(_validUntil!) : 'Select validity date'}'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _selectDate(context, isValidUntil: true),
+                ),
+              ),
+            ],
 
             // Save Button
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _selectedEventSpace != null ? _savePost : null,
               child: Text(
