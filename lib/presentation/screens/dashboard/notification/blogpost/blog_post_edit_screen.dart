@@ -170,7 +170,7 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
     });
 
     try {
-      Query query = _firestore.collection('eventSpaces');
+      Query query = _firestore.collection('event_spaces');
 
       // Apply city filter
       if (_selectedCity != null) {
@@ -182,8 +182,13 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
         query = query.where('commune.id', isEqualTo: _selectedCommune!.id);
       }
 
-      // Start after the last document and limit
-      query = query.startAfterDocument(_lastDocument!).limit(_pageSize);
+      // Start after the last document only if it exists
+      if (_lastDocument != null) {
+        query = query.startAfterDocument(_lastDocument!);
+      }
+
+      // Limit the number of documents
+      query = query.limit(_pageSize);
 
       final querySnapshot = await query.get();
 
@@ -198,10 +203,10 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
         _eventSpaces.addAll(newEventSpaces);
 
         // Check if there are more documents
-        _hasMoreData = querySnapshot.docs.length == _pageSize;
+        _hasMoreData = newEventSpaces.length == _pageSize;
 
         // Update the last document for next pagination
-        if (querySnapshot.docs.isNotEmpty) {
+        if (newEventSpaces.isNotEmpty) {
           _lastDocument = querySnapshot.docs.last;
         }
 
@@ -577,20 +582,35 @@ class _BlogPostEditScreenState extends State<BlogPostEditScreen> {
             if (_isPromotional) ...[
               // Promotional Price Input
               TextFormField(
+                initialValue: _promotionalPrice?.toString() ?? '',
                 decoration: const InputDecoration(
                   labelText: 'Promotional Price',
                   hintText: 'Enter promotional price',
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (_isPromotional && (value == null || value.isEmpty)) {
-                    return 'Please enter a promotional price';
+                  if (_isPromotional) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a promotional price';
+                    }
+                    // Vérifiez que le prix est un nombre valide
+                    final price = double.tryParse(value);
+                    if (price == null) {
+                      return 'Please enter a valid price';
+                    }
+                    // Vérifiez que le prix promotionnel est inférieur au prix original
+                    if (_selectedEventSpace != null &&
+                        price >= _selectedEventSpace!.price) {
+                      return 'Promotional price must be lower than original price';
+                    }
                   }
                   return null;
                 },
-                onSaved: (value) {
-                  _promotionalPrice =
-                      value != null ? double.parse(value) : null;
+                onChanged: (value) {
+                  // Mise à jour immédiate du prix promotionnel lors de la saisie
+                  setState(() {
+                    _promotionalPrice = double.tryParse(value);
+                  });
                 },
               ),
 

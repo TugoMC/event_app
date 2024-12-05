@@ -254,16 +254,18 @@ class _NotificationsManagementScreenState
                   // Navigation vers la suppression des notifications
                 },
               ),
-              ElevatedButton(
-                onPressed: () {
+              _buildMenuItem(
+                icon: Icon(CupertinoIcons.doc_text_fill,
+                    color: Colors.purple[400]),
+                title: 'Gérer les Articles de Blog',
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (context) => const BlogPostListScreen()),
                   );
                 },
-                child: const Text('Manage Blog Posts'),
-              )
+              ),
             ],
           ),
         ),

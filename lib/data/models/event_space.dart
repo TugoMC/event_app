@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'activity.dart';
 import 'city.dart';
 import 'commune.dart';
@@ -230,6 +232,19 @@ class EventSpace {
       createdBy: json['createdBy'],
       version: json['version'] ?? 1,
     );
+  }
+
+  static Future<EventSpace> fetchEventSpaceDetails(String eventSpaceId) async {
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('event_spaces')
+        .doc(eventSpaceId)
+        .get();
+
+    if (!docSnapshot.exists) {
+      throw ArgumentError('EventSpace not found');
+    }
+
+    return EventSpace.fromJson(docSnapshot.data()!);
   }
 }
 

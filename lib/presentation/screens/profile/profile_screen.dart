@@ -1,5 +1,6 @@
 import 'package:event_app/presentation/screens/auth/auth_screen.dart';
 import 'package:event_app/presentation/screens/profile/favorites_screen.dart';
+import 'package:event_app/presentation/screens/profile/notifications_screen.dart';
 import 'package:event_app/presentation/screens/profile/personal_info_screen.dart';
 import 'package:event_app/presentation/screens/profile/user_review_screen.dart';
 import 'package:flutter/material.dart';
@@ -412,7 +413,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: Icon(CupertinoIcons.bell, color: Colors.yellow[700]),
                 title: 'Notifications',
                 onTap: () {
-                  // Navigation vers les notifications
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const NotificationsScreen()),
+                  );
                 },
               ),
               _buildMenuItem(
