@@ -4,6 +4,9 @@ import 'package:event_app/presentation/screens/profile/notification_detail_scree
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 class _NotificationsScreenStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -32,11 +35,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
   bool _showExpiredPosts = false;
+  bool _receiveNotifications = false;
+
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _loadNotificationPreferences();
+    _initializeLocalNotifications();
   }
 
   @override
@@ -47,14 +56,150 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.offset > _NotificationsScreenStyles.scrollThreshold &&
-        !_isScrolled) {
-      setState(() => _isScrolled = true);
-    } else if (_scrollController.offset <=
-            _NotificationsScreenStyles.scrollThreshold &&
-        _isScrolled) {
-      setState(() => _isScrolled = false);
+    final shouldBeScrolled =
+        _scrollController.offset > _NotificationsScreenStyles.scrollThreshold;
+
+    // Utilisez setState seulement si l'état change réellement
+    if (shouldBeScrolled != _isScrolled) {
+      setState(() {
+        _isScrolled = shouldBeScrolled;
+      });
     }
+  }
+
+  Future<void> _loadNotificationPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _receiveNotifications = prefs.getBool('receive_notifications') ?? false;
+    });
+  }
+
+  Future<void> _initializeLocalNotifications() async {
+    // Android initialization
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+      android: initializationSettingsAndroid,
+    );
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // Initialize Android Alarm Manager
+    await AndroidAlarmManager.initialize();
+  }
+
+  Future<void> _toggleNotifications(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('receive_notifications', value);
+
+    setState(() {
+      _receiveNotifications = value;
+    });
+
+    if (value) {
+      // Start scheduling notifications
+      _scheduleNotifications();
+    } else {
+      // Cancel all scheduled notifications
+      await flutterLocalNotificationsPlugin.cancelAll();
+    }
+  }
+
+  void _scheduleNotifications() async {
+    if (!_receiveNotifications) return;
+
+    // Fetch blog posts from Firestore
+    final snapshot = await FirebaseFirestore.instance
+        .collection('blogPosts')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    // Convert documents to BlogPost objects
+    List<BlogPost> blogPosts = snapshot.docs.map((doc) {
+      var blogPostData = doc.data();
+      return BlogPost.fromJson(blogPostData);
+    }).toList();
+
+    // Filter non-expired blog posts
+    List<BlogPost> activePosts = blogPosts.where((blogPost) {
+      return blogPost.validUntil == null ||
+          DateTime.now().isBefore(blogPost.validUntil!);
+    }).toList();
+
+    // Show notifications for active posts
+    for (var post in activePosts) {
+      await _schedulePostNotification(post);
+    }
+  }
+
+  Future<void> _schedulePostNotification(BlogPost blogPost) async {
+    // Fetch event space details
+    final eventSpace =
+        await EventSpace.fetchEventSpaceDetails(blogPost.eventSpaceId);
+
+    // Create a notification
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'event_notifications',
+      'Event Notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+
+    // Use scheduleNotification instead of schedule
+    await flutterLocalNotificationsPlugin.show(
+      blogPost.hashCode, // Unique ID
+      blogPost.title,
+      '${eventSpace.name} (${eventSpace.city.name} - ${eventSpace.commune.name})',
+      platformChannelSpecifics,
+    );
+  }
+
+  Widget _buildNotificationToggle() {
+    return Container(
+      constraints: BoxConstraints(
+        minHeight: _NotificationsScreenStyles.switchHeight,
+        maxHeight: _NotificationsScreenStyles.switchHeight +
+            20, // Allow slight overflow
+      ),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Recevoir les notifications',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black87,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 10), // Add some space between text and switch
+            Switch(
+              value: _receiveNotifications,
+              onChanged: _toggleNotifications,
+              activeColor: Colors.blue,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildCircularButton({
@@ -67,7 +212,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       margin: EdgeInsets.symmetric(
           horizontal: _NotificationsScreenStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -139,7 +284,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               _NotificationsScreenStyles.horizontalPadding),
                       padding: _NotificationsScreenStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(
                             _NotificationsScreenStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),
@@ -294,92 +439,105 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        child: Padding(
-          padding: EdgeInsets.only(
-            top: _NotificationsScreenStyles.appBarTotalHeight + 20,
-            left: 20,
-            right: 20,
-            bottom: 20,
-          ),
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('blogPosts')
-                .orderBy('createdAt', descending: true)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: RefreshIndicator(
+        onRefresh: () async {
+          // Optionnel : ajoutez une logique de rafraîchissement
+          await Future.delayed(Duration(seconds: 1));
+        },
+        child: CustomScrollView(
+          physics:
+              const BouncingScrollPhysics(), // Ajoute un effet de rebondissement
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(
+                top: _NotificationsScreenStyles.appBarTotalHeight + 20,
+                left: 20,
+                right: 20,
+                bottom: 20,
+              ),
+              sliver: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('blogPosts')
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return SliverToBoxAdapter(
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
 
-              if (snapshot.hasError) {
-                return Center(child: Text('Erreur : ${snapshot.error}'));
-              }
+                  if (snapshot.hasError) {
+                    return SliverToBoxAdapter(
+                      child: Center(child: Text('Erreur : ${snapshot.error}')),
+                    );
+                  }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text('Aucune notification'));
-              }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Center(child: Text('Aucune notification')),
+                    );
+                  }
 
-              // Convert documents to BlogPost objects
-              List<BlogPost> blogPosts = snapshot.data!.docs.map((doc) {
-                var blogPostData = doc.data() as Map<String, dynamic>;
-                return BlogPost.fromJson(blogPostData);
-              }).toList();
+                  // Convertir les documents en objets BlogPost
+                  List<BlogPost> blogPosts = snapshot.data!.docs.map((doc) {
+                    var blogPostData = doc.data() as Map<String, dynamic>;
+                    return BlogPost.fromJson(blogPostData);
+                  }).toList();
 
-              // Sort and filter blog posts
-              List<BlogPost> filteredBlogPosts = blogPosts.where((blogPost) {
-                bool isExpired = blogPost.validUntil != null &&
-                    DateTime.now().isAfter(blogPost.validUntil!);
+                  // Trier et filtrer les blog posts
+                  List<BlogPost> filteredBlogPosts =
+                      blogPosts.where((blogPost) {
+                    bool isExpired = blogPost.validUntil != null &&
+                        DateTime.now().isAfter(blogPost.validUntil!);
 
-                // If switch is off, filter out expired posts
-                return _showExpiredPosts || !isExpired;
-              }).toList();
+                    return _showExpiredPosts || !isExpired;
+                  }).toList();
 
-              // Sort: non-expired first, then expired (if showing expired)
-              filteredBlogPosts.sort((a, b) {
-                bool aExpired = a.validUntil != null &&
-                    DateTime.now().isAfter(a.validUntil!);
-                bool bExpired = b.validUntil != null &&
-                    DateTime.now().isAfter(b.validUntil!);
+                  // Trier : non expirés d'abord, puis expirés
+                  filteredBlogPosts.sort((a, b) {
+                    bool aExpired = a.validUntil != null &&
+                        DateTime.now().isAfter(a.validUntil!);
+                    bool bExpired = b.validUntil != null &&
+                        DateTime.now().isAfter(b.validUntil!);
 
-                if (aExpired == bExpired) {
-                  // If both are expired or both are not expired, sort by creation date
-                  return b.createdAt.compareTo(a.createdAt);
-                }
+                    if (aExpired == bExpired) {
+                      return b.createdAt.compareTo(a.createdAt);
+                    }
 
-                // Move expired to the bottom if not explicitly showing them
-                return _showExpiredPosts
-                    ? (bExpired ? 1 : -1)
-                    : (aExpired ? 1 : -1);
-              });
+                    return _showExpiredPosts
+                        ? (bExpired ? 1 : -1)
+                        : (aExpired ? 1 : -1);
+                  });
 
-              return Column(
-                children: [
-                  // Add the new toggle switch
-                  _buildExpiredPostsToggle(),
+                  return SliverList(
+                    delegate: SliverChildListDelegate([
+                      _buildNotificationToggle(),
+                      _buildExpiredPostsToggle(),
 
-                  // If no posts to show after filtering
-                  if (filteredBlogPosts.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 20),
-                      child: Text(
-                        'Aucune notification à afficher',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 16,
+                      if (filteredBlogPosts.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 20),
+                          child: Text(
+                            'Aucune notification à afficher',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                      ),
-                    ),
 
-                  // Build notification items
-                  ...filteredBlogPosts.map((blogPost) {
-                    return _buildNotificationItem(blogPost);
-                  }),
-                ],
-              );
-            },
-          ),
+                      // Construire les éléments de notification
+                      ...filteredBlogPosts.map((blogPost) {
+                        return _buildNotificationItem(blogPost);
+                      }),
+                    ]),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -387,7 +545,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildExpiredPostsToggle() {
     return Container(
-      height: _NotificationsScreenStyles.switchHeight,
+      constraints: BoxConstraints(
+        minHeight: _NotificationsScreenStyles.switchHeight,
+        maxHeight: _NotificationsScreenStyles.switchHeight +
+            20, // Allow slight overflow
+      ),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -397,15 +559,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Afficher les notifications expirées',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
+            Expanded(
+              child: Text(
+                'Afficher les expirées',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black87,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+            const SizedBox(width: 10), // Add some space between text and switch
             Switch(
               value: _showExpiredPosts,
               onChanged: (bool value) {
