@@ -1,17 +1,62 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/data/models/blog_post.dart'; // Import the BlogPost model
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class DetailsHeader extends StatelessWidget {
+class DetailsHeader extends StatefulWidget {
   final EventSpace eventSpace;
 
   const DetailsHeader({Key? key, required this.eventSpace}) : super(key: key);
 
+  @override
+  _DetailsHeaderState createState() => _DetailsHeaderState();
+}
+
+class _DetailsHeaderState extends State<DetailsHeader> {
+  BlogPost? _associatedBlogPost;
+  double? _currentPrice;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAssociatedBlogPost();
+  }
+
+  Future<void> _fetchAssociatedBlogPost() async {
+    try {
+      // Fetch the blog post associated with this event space
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('blog_posts')
+          .where('eventSpaceId', isEqualTo: widget.eventSpace.id)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final blogPostData = querySnapshot.docs.first.data();
+        final blogPost = BlogPost.fromJson(blogPostData);
+
+        setState(() {
+          _associatedBlogPost = blogPost;
+          // Utilisez la méthode getCurrentPrice() qui gère déjà la logique de prix promotionnel
+          _currentPrice = blogPost.getCurrentPrice();
+        });
+      } else {
+        setState(() {
+          _currentPrice = widget.eventSpace.price;
+        });
+      }
+    } catch (e) {
+      print('Error fetching associated blog post: $e');
+      setState(() {
+        _currentPrice = widget.eventSpace.price;
+      });
+    }
+  }
+
   Future<double> _calculateAverageRating() async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection('reviews')
-        .where('eventSpaceId', isEqualTo: eventSpace.id)
+        .where('eventSpaceId', isEqualTo: widget.eventSpace.id)
         .get();
 
     if (querySnapshot.docs.isEmpty) return 0.0;
@@ -29,7 +74,6 @@ class DetailsHeader extends StatelessWidget {
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Determine if we need to adjust layout for smaller screens
         bool isNarrowScreen = constraints.maxWidth < 350;
 
         return Container(
@@ -84,6 +128,7 @@ class DetailsHeader extends StatelessWidget {
       builder: (context, snapshot) {
         final averageRating = snapshot.data ?? 0.0;
         final hasReviews = averageRating > 0;
+        final displayPrice = _currentPrice ?? widget.eventSpace.price;
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -108,27 +153,71 @@ class DetailsHeader extends StatelessWidget {
                       // Hours Container
                       _buildResponsiveContainer(
                         icon: CupertinoIcons.clock_fill,
-                        text: eventSpace.hours,
+                        text: widget.eventSpace.hours,
                       ),
 
-                      // Price Container
+                      // Price Container avec logique promotionnelle
+                      // Price Container avec logique promotionnelle
                       _buildResponsiveContainer(
                         icon: CupertinoIcons.circle,
-                        text: '${eventSpace.price.toStringAsFixed(0)} FCFA',
-                        backgroundColor: const Color(0xFF8773F8),
-                        iconColor: Colors.white,
-                        textColor: Colors.white,
+                        text: '${displayPrice.toStringAsFixed(0)} FCFA',
+                        backgroundColor:
+                            _associatedBlogPost?.promotionalPrice != null &&
+                                    _associatedBlogPost!.promotionalPrice!
+                                        .isCurrentlyActive()
+                                ? const Color(0xFF8773F8)
+                                : null,
+                        iconColor:
+                            _associatedBlogPost?.promotionalPrice != null &&
+                                    _associatedBlogPost!.promotionalPrice!
+                                        .isCurrentlyActive()
+                                ? Colors.white
+                                : null,
+                        textColor:
+                            _associatedBlogPost?.promotionalPrice != null &&
+                                    _associatedBlogPost!.promotionalPrice!
+                                        .isCurrentlyActive()
+                                ? Colors.white
+                                : null,
                       ),
+                      if (_associatedBlogPost?.promotionalPrice != null &&
+                          _associatedBlogPost!.promotionalPrice!
+                              .isCurrentlyActive())
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text:
+                                      '${widget.eventSpace.price.toStringAsFixed(0)} FCFA',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: '  Offre limitée !',
+                                  style: TextStyle(
+                                    color: Color(0xFF8773F8),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   );
                 },
               ),
 
+              // Rest of the existing code remains the same...
               const SizedBox(height: 24),
 
-              // Description avec style amélioré
+              // Description
               Text(
-                eventSpace.description,
+                widget.eventSpace.description,
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey[700],
@@ -139,7 +228,7 @@ class DetailsHeader extends StatelessWidget {
 
               const SizedBox(height: 24),
 
-              // Phone Section (Kept mostly the same)
+              // Phone Section
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -179,7 +268,7 @@ class DetailsHeader extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            eventSpace.phoneNumber,
+                            widget.eventSpace.phoneNumber,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w500,

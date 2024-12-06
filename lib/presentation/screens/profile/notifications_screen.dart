@@ -17,6 +17,7 @@ class _NotificationsScreenStyles {
   static const double spaceBetweenButtonAndTitle = 8.0;
   static const double borderRadius = 20.0;
   static const double scrollThreshold = 80.0;
+  static const double switchHeight = 52.0;
 }
 
 class NotificationsScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  bool _showExpiredPosts = false;
 
   @override
   void initState() {
@@ -162,6 +164,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   // Dans la méthode _buildNotificationItem, remplacez l'existant par :
   Widget _buildNotificationItem(BlogPost blogPost) {
+    // Check if the blog post has expired
+    bool isExpired = blogPost.validUntil != null &&
+        DateTime.now().isAfter(blogPost.validUntil!);
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -174,45 +180,71 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isExpired ? Colors.grey[200] : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+              color: isExpired ? Colors.grey[400]! : Colors.grey[300]!),
         ),
-        child: ListTile(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                blogPost.title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black,
+        child: Stack(
+          children: [
+            ListTile(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    blogPost.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      color: isExpired ? Colors.grey[600] : Colors.black,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    blogPost.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isExpired ? Colors.grey[500] : Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children:
+                        blogPost.tags.map((tag) => _buildTagChip(tag)).toList(),
+                  ),
+                ],
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            if (isExpired)
+              Positioned(
+                top: 8,
+                right: 16,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red[400],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Expiré',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
-              Text(
-                blogPost.description,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children:
-                    blogPost.tags.map((tag) => _buildTagChip(tag)).toList(),
-              ),
-            ],
-          ),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          ],
         ),
       ),
     );
@@ -281,15 +313,101 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 return const Center(child: Text('Aucune notification'));
               }
 
+              // Convert documents to BlogPost objects
+              List<BlogPost> blogPosts = snapshot.data!.docs.map((doc) {
+                var blogPostData = doc.data() as Map<String, dynamic>;
+                return BlogPost.fromJson(blogPostData);
+              }).toList();
+
+              // Sort and filter blog posts
+              List<BlogPost> filteredBlogPosts = blogPosts.where((blogPost) {
+                bool isExpired = blogPost.validUntil != null &&
+                    DateTime.now().isAfter(blogPost.validUntil!);
+
+                // If switch is off, filter out expired posts
+                return _showExpiredPosts || !isExpired;
+              }).toList();
+
+              // Sort: non-expired first, then expired (if showing expired)
+              filteredBlogPosts.sort((a, b) {
+                bool aExpired = a.validUntil != null &&
+                    DateTime.now().isAfter(a.validUntil!);
+                bool bExpired = b.validUntil != null &&
+                    DateTime.now().isAfter(b.validUntil!);
+
+                if (aExpired == bExpired) {
+                  // If both are expired or both are not expired, sort by creation date
+                  return b.createdAt.compareTo(a.createdAt);
+                }
+
+                // Move expired to the bottom if not explicitly showing them
+                return _showExpiredPosts
+                    ? (bExpired ? 1 : -1)
+                    : (aExpired ? 1 : -1);
+              });
+
               return Column(
-                children: snapshot.data!.docs.map((doc) {
-                  var blogPostData = doc.data() as Map<String, dynamic>;
-                  BlogPost blogPost = BlogPost.fromJson(blogPostData);
-                  return _buildNotificationItem(blogPost);
-                }).toList(),
+                children: [
+                  // Add the new toggle switch
+                  _buildExpiredPostsToggle(),
+
+                  // If no posts to show after filtering
+                  if (filteredBlogPosts.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 20),
+                      child: Text(
+                        'Aucune notification à afficher',
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+
+                  // Build notification items
+                  ...filteredBlogPosts.map((blogPost) {
+                    return _buildNotificationItem(blogPost);
+                  }).toList(),
+                ],
               );
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpiredPostsToggle() {
+    return Container(
+      height: _NotificationsScreenStyles.switchHeight,
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Afficher les notifications expirées',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            Switch(
+              value: _showExpiredPosts,
+              onChanged: (bool value) {
+                setState(() {
+                  _showExpiredPosts = value;
+                });
+              },
+              activeColor: Colors.blue,
+            ),
+          ],
         ),
       ),
     );

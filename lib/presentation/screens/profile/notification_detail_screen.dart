@@ -195,6 +195,9 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
   }
 
   Widget _buildPriceSection() {
+    if (widget.blogPost.tags.contains(BlogTag.gratuit)) {
+      return Container(); // This will not render anything
+    }
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.all(16),

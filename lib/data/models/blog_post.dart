@@ -184,7 +184,8 @@ class BlogPromotionalPrice {
 
   bool isCurrentlyActive() {
     final now = DateTime.now();
-    return now.isAfter(startDate) && now.isBefore(endDate);
+    return (now.isAtSameMomentAs(startDate) || now.isAfter(startDate)) &&
+        (now.isAtSameMomentAs(endDate) || now.isBefore(endDate));
   }
 
   // JSON serialization methods
