@@ -1,4 +1,5 @@
 import 'package:event_app/data/models/blog_post.dart';
+import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/presentation/screens/profile/notification_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -162,9 +163,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  // Dans la méthode _buildNotificationItem, remplacez l'existant par :
   Widget _buildNotificationItem(BlogPost blogPost) {
-    // Check if the blog post has expired
     bool isExpired = blogPost.validUntil != null &&
         DateTime.now().isAfter(blogPost.validUntil!);
 
@@ -191,15 +190,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    blogPost.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: isExpired ? Colors.grey[600] : Colors.black,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  FutureBuilder<EventSpace>(
+                    future: EventSpace.fetchEventSpaceDetails(
+                        blogPost.eventSpaceId),
+                    builder: (context, snapshot) {
+                      final title = snapshot.hasData
+                          ? '${blogPost.title} - ${snapshot.data!.name} (${snapshot.data!.city.name} - ${snapshot.data!.commune.name})'
+                          : blogPost.title;
+                      return Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: isExpired ? Colors.grey[600] : Colors.black,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -367,7 +375,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   // Build notification items
                   ...filteredBlogPosts.map((blogPost) {
                     return _buildNotificationItem(blogPost);
-                  }).toList(),
+                  }),
                 ],
               );
             },

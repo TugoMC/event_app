@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -272,7 +271,6 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
     return GestureDetector(
       onTap: () async {
         try {
-          // Remplacez cette ligne par votre méthode de récupération des détails de l'espace
           final eventSpace = await EventSpace.fetchEventSpaceDetails(
               widget.blogPost.eventSpaceId);
 
@@ -300,20 +298,48 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey[300]!),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
-            const Text(
-              'Voir l\'espace',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Voir l'espace",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.grey[600],
+                  size: 20,
+                ),
+              ],
             ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey[600],
-              size: 20,
+            const SizedBox(height: 8),
+            FutureBuilder<EventSpace>(
+              future: EventSpace.fetchEventSpaceDetails(
+                  widget.blogPost.eventSpaceId),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Row(
+                    children: [
+                      Icon(Icons.location_on,
+                          color: Colors.grey[600], size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${snapshot.data!.commune.name}, ${snapshot.data!.city.name}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Container(); // Or a loading indicator
+              },
             ),
           ],
         ),
@@ -339,13 +365,6 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.blogPost.description,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[800],
-                ),
-              ),
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
@@ -353,6 +372,15 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
                     .map((tag) => _buildTagChip(tag))
                     .toList(),
               ),
+              const SizedBox(height: 25),
+              Text(
+                widget.blogPost.description,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const SizedBox(height: 16),
               _buildPriceSection(),
               _buildEventSpaceSection(),
               if (widget.blogPost.validUntil != null)

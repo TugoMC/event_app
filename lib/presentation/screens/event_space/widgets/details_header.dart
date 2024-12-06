@@ -27,7 +27,7 @@ class _DetailsHeaderState extends State<DetailsHeader> {
     try {
       // Fetch the blog post associated with this event space
       final querySnapshot = await FirebaseFirestore.instance
-          .collection('blog_posts')
+          .collection('blogPosts')
           .where('eventSpaceId', isEqualTo: widget.eventSpace.id)
           .get();
 
@@ -78,16 +78,29 @@ class _DetailsHeaderState extends State<DetailsHeader> {
 
         return Container(
           constraints: BoxConstraints(
-            minWidth: isNarrowScreen ? 80 : 100,
-            maxHeight: 40,
+            minWidth: isNarrowScreen ? 90 : 110,
+            maxHeight: 45,
           ),
           padding: EdgeInsets.symmetric(
-            horizontal: isNarrowScreen ? 8 : 12,
-            vertical: 6,
+            horizontal: isNarrowScreen ? 10 : 14,
+            vertical: 8,
           ),
           decoration: BoxDecoration(
-            color: backgroundColor ?? const Color(0xFF8773F8).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
+            color: backgroundColor ?? Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.shade200,
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+            border: Border.all(
+              color: backgroundColor == null
+                  ? const Color(0xFF8773F8).withOpacity(0.2)
+                  : Colors.transparent,
+              width: 1.5,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -96,9 +109,9 @@ class _DetailsHeaderState extends State<DetailsHeader> {
               Icon(
                 icon,
                 color: iconColor ?? const Color(0xFF8773F8),
-                size: isNarrowScreen ? 14 : 16,
+                size: isNarrowScreen ? 16 : 18,
               ),
-              if (!isNarrowScreen) const SizedBox(width: 4),
+              if (!isNarrowScreen) const SizedBox(width: 6),
               Flexible(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -106,8 +119,9 @@ class _DetailsHeaderState extends State<DetailsHeader> {
                     text,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: textColor ?? const Color(0xFF8773F8),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: textColor ?? const Color(0xFF2D3142),
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
@@ -156,30 +170,33 @@ class _DetailsHeaderState extends State<DetailsHeader> {
                         text: widget.eventSpace.hours,
                       ),
 
-                      // Price Container avec logique promotionnelle
-                      // Price Container avec logique promotionnelle
-                      _buildResponsiveContainer(
-                        icon: CupertinoIcons.circle,
-                        text: '${displayPrice.toStringAsFixed(0)} FCFA',
-                        backgroundColor:
-                            _associatedBlogPost?.promotionalPrice != null &&
-                                    _associatedBlogPost!.promotionalPrice!
-                                        .isCurrentlyActive()
-                                ? const Color(0xFF8773F8)
-                                : null,
-                        iconColor:
-                            _associatedBlogPost?.promotionalPrice != null &&
-                                    _associatedBlogPost!.promotionalPrice!
-                                        .isCurrentlyActive()
-                                ? Colors.white
-                                : null,
-                        textColor:
-                            _associatedBlogPost?.promotionalPrice != null &&
-                                    _associatedBlogPost!.promotionalPrice!
-                                        .isCurrentlyActive()
-                                ? Colors.white
-                                : null,
+                      // Wrap breaker to force price to next line
+                      SizedBox(
+                        width: double.infinity,
+                        child: _buildResponsiveContainer(
+                          icon: CupertinoIcons.circle,
+                          text: '${displayPrice.toStringAsFixed(0)} FCFA',
+                          backgroundColor:
+                              _associatedBlogPost?.promotionalPrice != null &&
+                                      _associatedBlogPost!.promotionalPrice!
+                                          .isCurrentlyActive()
+                                  ? const Color(0xFF8773F8)
+                                  : null,
+                          iconColor:
+                              _associatedBlogPost?.promotionalPrice != null &&
+                                      _associatedBlogPost!.promotionalPrice!
+                                          .isCurrentlyActive()
+                                  ? Colors.white
+                                  : null,
+                          textColor:
+                              _associatedBlogPost?.promotionalPrice != null &&
+                                      _associatedBlogPost!.promotionalPrice!
+                                          .isCurrentlyActive()
+                                  ? Colors.white
+                                  : null,
+                        ),
                       ),
+
                       if (_associatedBlogPost?.promotionalPrice != null &&
                           _associatedBlogPost!.promotionalPrice!
                               .isCurrentlyActive())
