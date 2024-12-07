@@ -253,13 +253,74 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _openSearchScreen() async {
+    // Montrer immédiatement un indicateur de chargement
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) =>
+          const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // Exécuter les requêtes en parallèle
+      final results = await Future.wait([
+        firestore.collection('cities').get(),
+        firestore.collection('communes').get(),
+        firestore
+            .collection('event_spaces')
+            .where('isActive', isEqualTo: true)
+            .get(),
+        firestore.collection('activities').get(),
+      ]);
+
+      final cities =
+          results[0].docs.map((doc) => City.fromJson(doc.data())).toList();
+      final communes =
+          results[1].docs.map((doc) => Commune.fromJson(doc.data())).toList();
+
+      final eventSpacesSnapshot = results[2];
+      final eventSpaces = eventSpacesSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return EventSpace.fromJson(data);
+      }).toList();
+
+      final activities = results[3]
+          .docs
+          .map((doc) => Activity.fromJson(doc.data(), doc.id))
+          .toList();
+
+      // Fermer le dialogue de chargement
+      Navigator.pop(context);
+
+      // Naviguer vers l'écran de recherche
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchScreen(
+            allCities: cities,
+            allCommunes: communes,
+            allEventSpaces: eventSpaces,
+            allActivities: activities,
+          ),
+        ),
+      );
+    } catch (e) {
+      // Gérer les erreurs
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de chargement: $e')),
+      );
+    }
+  }
+
   Widget _buildNearbySection() {
     if (!_isLocationEnabled) {
       return Center(
         child: Column(
           children: [
             const Text(
-              'Activez la localisation pour voir les espaces évenementiels proches de chez vous.',
+              'Activez la localisation dans les paramètres pour voir les espaces évenementiels proches de chez vous.',
               textAlign: TextAlign.center,
             ),
             TextButton(
@@ -431,98 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: const Icon(CupertinoIcons.search,
                             color: Colors.black),
                         onPressed: () async {
-                          // Récupérer les villes
-                          final citiesSnapshot =
-                              await firestore.collection('cities').get();
-                          final cities = citiesSnapshot.docs
-                              .map((doc) => City.fromJson(
-                                  doc.data() as Map<String, dynamic>))
-                              .toList();
-
-                          // Récupérer les communes
-                          final communesSnapshot =
-                              await firestore.collection('communes').get();
-                          final communes = communesSnapshot.docs
-                              .map((doc) => Commune.fromJson(
-                                  doc.data() as Map<String, dynamic>))
-                              .toList();
-
-                          // Récupérer les espaces événementiels
-                          final eventSpacesSnapshot = await firestore
-                              .collection('event_spaces')
-                              .where('isActive', isEqualTo: true)
-                              .get();
-                          final eventSpaces =
-                              eventSpacesSnapshot.docs.map((doc) {
-                            final data = doc.data();
-                            return EventSpace(
-                              id: doc.id,
-                              name: data['name'] as String,
-                              description: data['description'] as String,
-                              commune: Commune.fromJson(
-                                  data['commune'] as Map<String, dynamic>),
-                              city: City.fromJson(
-                                  data['city'] as Map<String, dynamic>),
-                              activities: (data['activities'] as List)
-                                  .map((activity) => Activity.fromJson(
-                                      activity as Map<String, dynamic>))
-                                  .toList(),
-                              reviews: (data['reviews'] as List)
-                                  .map((review) => Review.fromJson(
-                                      review as Map<String, dynamic>))
-                                  .toList(),
-                              hours: data['hours'] as String,
-                              price: (data['price'] as num).toDouble(),
-                              phoneNumber: data['phoneNumber'] as String,
-                              photoUrls: List<String>.from(data['photoUrls']),
-                              location: data['location'] as String,
-                              createdAt:
-                                  DateTime.parse(data['createdAt'] as String),
-                              updatedAt: data['updatedAt'] != null
-                                  ? DateTime.parse(data['updatedAt'] as String)
-                                  : null,
-                              isActive: data['isActive'] as bool? ?? true,
-                              createdBy: data['createdBy'] as String,
-                            );
-                          }).toList();
-
-                          // Récupérer les activités
-                          final activitiesSnapshot =
-                              await firestore.collection('activities').get();
-                          final activities = activitiesSnapshot.docs
-                              .map((doc) => Activity.fromJson(
-                                  doc.data() as Map<String, dynamic>, doc.id))
-                              .toList();
-
-                          // Afficher un indicateur de chargement pendant la récupération des données
-                          if (!mounted) return;
-
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (BuildContext context) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            },
-                          );
-
-                          // Navigation vers l'écran de recherche
-                          if (!mounted) return;
-
-                          Navigator.pop(
-                              context); // Fermer le dialogue de chargement
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SearchScreen(
-                                allCities: cities,
-                                allCommunes: communes,
-                                allEventSpaces: eventSpaces,
-                                allActivities: activities,
-                              ),
-                            ),
-                          );
+                          _openSearchScreen();
                         },
                       ),
                       _buildCircularButton(

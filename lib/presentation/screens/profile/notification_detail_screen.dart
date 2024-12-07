@@ -52,6 +52,56 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
     }
   }
 
+  bool _isOfferExpired() {
+    final now = DateTime.now();
+
+    // Check promotional price expiration if exists
+    if (widget.blogPost.promotionalPrice != null) {
+      if (!widget.blogPost.promotionalPrice!.isCurrentlyActive()) {
+        return true;
+      }
+    }
+
+    // Check overall validity period
+    if (widget.blogPost.validUntil != null) {
+      return now.isAfter(widget.blogPost.validUntil!);
+    }
+
+    return false;
+  }
+
+  Widget _buildExpirationBanner() {
+    if (_isOfferExpired()) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_outlined, color: Colors.red[700], size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Cette offre a expiré',
+                style: TextStyle(
+                  color: Colors.red[700],
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
   Widget _buildCircularButton({
     required Widget icon,
     required VoidCallback onPressed,
@@ -195,14 +245,15 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
 
   Widget _buildPriceSection() {
     if (widget.blogPost.tags.contains(BlogTag.gratuit)) {
-      return Container(); // This will not render anything
+      return const SizedBox.shrink(); // This will not render anything
     }
     return Container(
+      width: double.infinity, // Make full width
       margin: const EdgeInsets.symmetric(vertical: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[300]!),
       ),
       child: Column(
@@ -211,14 +262,16 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Prix de l\'espace',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+              const Expanded(
+                child: Text(
+                  'Prix de l\'espace',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // Copier directement le code de _buildDetailRow de blog_post_detail_screen
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -260,6 +313,7 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
                   fontSize: 12,
                   color: Colors.grey,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
         ],
@@ -291,23 +345,28 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
         }
       },
       child: Container(
+        width: double.infinity, // Make full width
         margin: const EdgeInsets.symmetric(vertical: 16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Voir l'espace",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                const Expanded(
+                  child: Text(
+                    "Voir l'espace",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Icon(
@@ -328,11 +387,14 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
                       Icon(Icons.location_on,
                           color: Colors.grey[600], size: 20),
                       const SizedBox(width: 8),
-                      Text(
-                        '${snapshot.data!.commune.name}, ${snapshot.data!.city.name}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
+                      Expanded(
+                        child: Text(
+                          '${snapshot.data!.commune.name}, ${snapshot.data!.city.name}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -365,6 +427,9 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Add expiration banner at the top
+              _buildExpirationBanner(),
+
               Wrap(
                 spacing: 8,
                 runSpacing: 4,
@@ -383,23 +448,39 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
               const SizedBox(height: 16),
               _buildPriceSection(),
               _buildEventSpaceSection(),
+              // Update the validity section to match the responsive design
               if (widget.blogPost.validUntil != null)
                 Container(
+                  width: double.infinity, // Make full width
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: _isOfferExpired() ? Colors.red[50] : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(
+                        color: _isOfferExpired()
+                            ? Colors.red[200]!
+                            : Colors.grey[300]!),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today, size: 20),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 20,
+                        color:
+                            _isOfferExpired() ? Colors.red[700] : Colors.black,
+                      ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Valable jusqu\'au ${DateFormat('dd/MM/yyyy').format(widget.blogPost.validUntil!)}',
-                        style: const TextStyle(
-                          fontSize: 14,
+                      Expanded(
+                        child: Text(
+                          'Valable jusqu\'au ${DateFormat('dd/MM/yyyy').format(widget.blogPost.validUntil!)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _isOfferExpired()
+                                ? Colors.red[700]
+                                : Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
