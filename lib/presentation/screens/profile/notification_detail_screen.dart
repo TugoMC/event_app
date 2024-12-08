@@ -543,14 +543,31 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
   }
 
   Future<void> _sendPushNotification() async {
-    await PushNotificationService.sendPushNotification(
-      context: context,
-      title: widget.blogPost.title,
-      body: widget.blogPost.description,
-      data: {
-        'blogPostId': widget.blogPost.id,
-        'type': 'blog_post',
-      },
-    );
+    try {
+      // Fetch event space details to get the name
+      final eventSpace =
+          await EventSpace.fetchEventSpaceDetails(widget.blogPost.eventSpaceId);
+
+      // Truncate description to first 50 characters
+      String truncatedDescription = widget.blogPost.description.length > 50
+          ? '${widget.blogPost.description.substring(0, 50)}...'
+          : widget.blogPost.description;
+
+      await PushNotificationService.sendPushNotification(
+        context: context,
+        title: '${widget.blogPost.title} - ${eventSpace.name}',
+        body: truncatedDescription,
+        data: {
+          'blogPostId': widget.blogPost.id,
+          'type': 'blog_post',
+          'eventSpaceId': widget.blogPost.eventSpaceId,
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Erreur lors de l\'envoi de la notification : $e')),
+      );
+    }
   }
 }

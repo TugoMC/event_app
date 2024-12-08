@@ -162,6 +162,32 @@ class BlogPost {
     if (price is String) return double.parse(price);
     throw FormatException('Invalid price format: $price');
   }
+
+  // In blog_post.dart
+  static Future<BlogPost?> fetchBlogPostById(String blogPostId) async {
+    try {
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('blogPosts')
+          .doc(blogPostId)
+          .get();
+
+      print('Fetching blog post with ID: $blogPostId');
+      print('Document exists: ${docSnapshot.exists}');
+
+      if (!docSnapshot.exists) {
+        print('Blog post not found in Firestore');
+        return null;
+      }
+
+      final data = docSnapshot.data();
+      print('Blog post data: $data');
+
+      return BlogPost.fromJson({'id': docSnapshot.id, ...data!});
+    } catch (e) {
+      print('Error fetching blog post: $e');
+      return null;
+    }
+  }
 }
 
 enum BlogTag {

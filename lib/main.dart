@@ -1,6 +1,7 @@
 import 'package:event_app/presentation/screens/auth/auth_screen.dart';
-
+import 'package:event_app/presentation/screens/profile/notif_navig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -72,6 +73,8 @@ class UserCollectionService {
 // Global instance du service
 final userCollectionService = UserCollectionService();
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -105,17 +108,58 @@ void main() async {
     print('Firebase initialization error: $e');
   }
 
-  runApp(const MyApp());
+  // Configuration des notifications push
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // Demander la permission pour les notifications
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+    // Gérer les notifications lorsque l'application est au premier plan
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print('Message reçu : ${message.notification?.title}');
+    });
+
+    // Gérer les notifications lorsque l'utilisateur clique dessus
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _handleNotificationNavigation(message);
+    });
+
+    // Gérer les notifications initiales si l'app est ouverte à partir d'une notification
+    messaging.getInitialMessage().then((RemoteMessage? message) {
+      if (message != null) {
+        _handleNotificationNavigation(message);
+      }
+    });
+  }
+
+  runApp(MyApp(navigatorKey: navigatorKey));
+}
+
+void _handleNotificationNavigation(RemoteMessage message) {
+  // Utiliser la clé de navigation globale
+  final BuildContext? context = navigatorKey.currentContext;
+
+  if (context != null && message.data['type'] == 'blog_post') {
+    NotificationNavigationService.navigateToBlogPostDetail(
+        context, message.data);
+  }
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final GlobalKey<NavigatorState> navigatorKey;
+  const MyApp({super.key, required this.navigatorKey});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Onboarding Example',
+      title: 'anabe',
       theme: ThemeData(
         primaryColor: Colors.white,
         scaffoldBackgroundColor: Colors.white,
