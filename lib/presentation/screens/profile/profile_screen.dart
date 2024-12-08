@@ -61,8 +61,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _checkLocationStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
     // Vérifier le statut réel de la permission de localisation
     PermissionStatus status = await Permission.location.status;
 

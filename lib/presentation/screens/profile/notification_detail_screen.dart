@@ -1,4 +1,6 @@
 import 'package:event_app/presentation/screens/event_space/event_space_detail.dart';
+import 'package:event_app/presentation/screens/profile/notif_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
@@ -17,6 +19,7 @@ class BlogPostDetailScreen extends StatefulWidget {
 class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  bool _isAdmin = false;
 
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
@@ -35,6 +38,7 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _checkAdminStatus();
   }
 
   @override
@@ -197,7 +201,7 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
                             ),
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           );
                         },
@@ -409,17 +413,49 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
     );
   }
 
+  Widget _buildAdminNotificationButton() {
+    if (!_isAdmin) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: ElevatedButton(
+        onPressed: _sendPushNotification,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.notifications_active),
+            SizedBox(width: 8),
+            Text(
+              'Envoyer une notification push',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
       body: SingleChildScrollView(
         controller: _scrollController,
         child: Padding(
           padding: EdgeInsets.only(
-            top: appBarTotalHeight + 20,
+            top: appBarTotalHeight - 100,
             left: 20,
             right: 20,
             bottom: 20,
@@ -448,10 +484,14 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
               const SizedBox(height: 16),
               _buildPriceSection(),
               _buildEventSpaceSection(),
-              // Update the validity section to match the responsive design
+
+              // Add the admin notification button
+              _buildAdminNotificationButton(),
+
+              // Previous validity section remains the same
               if (widget.blogPost.validUntil != null)
                 Container(
-                  width: double.infinity, // Make full width
+                  width: double.infinity,
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -490,6 +530,27 @@ class _BlogPostDetailScreenState extends State<BlogPostDetailScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _isAdmin = user.email == 'ouattarajunior418@gmail.com';
+      });
+    }
+  }
+
+  Future<void> _sendPushNotification() async {
+    await PushNotificationService.sendPushNotification(
+      context: context,
+      title: widget.blogPost.title,
+      body: widget.blogPost.description,
+      data: {
+        'blogPostId': widget.blogPost.id,
+        'type': 'blog_post',
+      },
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:event_app/data/models/blog_post.dart';
 import 'package:event_app/data/models/event_space.dart';
 import 'package:event_app/presentation/screens/profile/notification_detail_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,10 +70,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _loadNotificationPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _receiveNotifications = prefs.getBool('receive_notifications') ?? false;
-    });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _receiveNotifications = false;
+      });
+      return;
+    }
+
+    try {
+      // Fetch user's notification settings from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('user_notification_tokens')
+          .doc(user.uid)
+          .get();
+
+      setState(() {
+        _receiveNotifications = doc.exists
+            ? (doc.data()?['receive_notifications'] as bool?) ?? false
+            : false;
+      });
+    } catch (e) {
+      print('Error loading notification settings: $e');
+      setState(() {
+        _receiveNotifications = false;
+      });
+    }
   }
 
   Future<void> _initializeLocalNotifications() async {
@@ -91,19 +115,55 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<void> _toggleNotifications(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('receive_notifications', value);
-
-    setState(() {
-      _receiveNotifications = value;
-    });
-
-    if (value) {
-      // Start scheduling notifications
-      _scheduleNotifications();
-    } else {
-      // Cancel all scheduled notifications
-      await flutterLocalNotificationsPlugin.cancelAll();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      // Request notification permissions
+      final messaging = FirebaseMessaging.instance;
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        provisional: false,
+        sound: true,
+      );
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        // Get the FCM token
+        final token = await messaging.getToken();
+        if (token != null) {
+          // Save/update notification token in Firestore
+          await FirebaseFirestore.instance
+              .collection('user_notification_tokens')
+              .doc(user.uid)
+              .set({
+            'token': token,
+            'receive_notifications': value,
+            'user_id': user.uid,
+            'created_at': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+          // Update local SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('receive_notifications', value);
+          // Update local state
+          setState(() {
+            _receiveNotifications = value;
+          });
+        }
+      } else {
+        // Permissions not granted
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Veuillez autoriser les notifications dans les paramètres de l\'appareil'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error toggling notifications: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de la mise à jour des notifications'),
+        ),
+      );
     }
   }
 
@@ -437,7 +497,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      extendBodyBehindAppBar: true,
       appBar: _buildAppBar(context),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -450,7 +509,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           slivers: [
             SliverPadding(
               padding: EdgeInsets.only(
-                top: _NotificationsScreenStyles.appBarTotalHeight + 20,
+                top: _NotificationsScreenStyles.appBarTotalHeight - 120,
                 left: 20,
                 right: 20,
                 bottom: 20,
@@ -545,7 +604,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildExpiredPostsToggle() {
     return Container(
-      constraints: BoxConstraints(
+      constraints: const BoxConstraints(
         minHeight: _NotificationsScreenStyles.switchHeight,
         maxHeight: _NotificationsScreenStyles.switchHeight +
             20, // Allow slight overflow
@@ -560,7 +619,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            Expanded(
+            const Expanded(
               child: Text(
                 'Afficher les expirées',
                 style: TextStyle(
