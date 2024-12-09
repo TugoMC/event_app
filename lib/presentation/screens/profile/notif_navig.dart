@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:event_app/data/models/blog_post.dart';
 import 'package:event_app/presentation/screens/profile/notification_detail_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NotificationNavigationService {
   static void navigateToBlogPostDetail(
       BuildContext context, Map<String, dynamic> data) async {
     if (data['type'] == 'blog_post' && data['blogPostId'] != null) {
       try {
-        final blogPost = await BlogPost.fetchBlogPostById(data['blogPostId']);
+        // Directly fetch the blog post from Firestore
+        final docSnapshot = await FirebaseFirestore.instance
+            .collection('blogPosts')
+            .doc(data['blogPostId'])
+            .get();
 
-        if (blogPost != null) {
+        if (docSnapshot.exists) {
+          // Combine the document ID with its data
+          final blogPostData = {'id': docSnapshot.id, ...docSnapshot.data()!};
+
+          // Create BlogPost object from the fetched data
+          final blogPost = BlogPost.fromJson(blogPostData);
+
+          // Navigate to the blog post detail screen
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -17,11 +29,12 @@ class NotificationNavigationService {
             ),
           );
         } else {
-          // Afficher un écran d'erreur personnalisé ou une boîte de dialogue
+          // Show error dialog if blog post not found
           _showDetailedErrorDialog(context, 'Publication non trouvée',
               'Le billet de blog que vous recherchez n\'existe plus ou a été supprimé.');
         }
       } catch (e) {
+        // Show error dialog if there's an exception
         _showDetailedErrorDialog(context, 'Erreur de chargement',
             'Impossible de charger les détails de la publication. Veuillez réessayer.');
       }

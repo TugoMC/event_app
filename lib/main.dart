@@ -3,7 +3,6 @@ import 'package:event_app/presentation/screens/profile/notif_navig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'presentation/screens/onboarding/onboarding_screen.dart';
@@ -77,8 +76,7 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+
   try {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -106,35 +104,6 @@ void main() async {
     });
   } catch (e) {
     print('Firebase initialization error: $e');
-  }
-
-  // Configuration des notifications push
-  FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-  // Demander la permission pour les notifications
-  NotificationSettings settings = await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-    // Gérer les notifications lorsque l'application est au premier plan
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Message reçu : ${message.notification?.title}');
-    });
-
-    // Gérer les notifications lorsque l'utilisateur clique dessus
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _handleNotificationNavigation(message);
-    });
-
-    // Gérer les notifications initiales si l'app est ouverte à partir d'une notification
-    messaging.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
-        _handleNotificationNavigation(message);
-      }
-    });
   }
 
   runApp(MyApp(navigatorKey: navigatorKey));
