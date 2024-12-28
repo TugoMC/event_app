@@ -50,31 +50,77 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() async {
     if (_currentPage < onboardingData.length - 1) {
-      _pageController.nextPage(
+      // Si ce n'est pas la dernière page, passer à la suivante
+      await _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.ease,
       );
     } else {
-      // Dernière page (localisation)
-      bool permissionGranted = await _requestLocationPermission();
+      // Sur la dernière page (localisation)
+      try {
+        // Demander la permission de localisation
+        final status = await Permission.location.request();
 
-      if (permissionGranted) {
-        // Marquer l'onboarding comme terminé et passer à l'écran principal
+        // Définir onboarding comme terminé, quelle que soit la réponse
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isFirstTime', false);
 
-        // Naviguer vers l'écran de connexion
-        Navigator.pushReplacement(
+        if (!mounted)
+          return; // Vérification de sécurité si le widget n'est plus monté
+
+        if (status == PermissionStatus.granted) {
+          // Permission accordée - Navigation vers AuthScreen
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AuthScreen()),
+          );
+        } else {
+          // Permission refusée - Afficher un message mais continuer quand même
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'La localisation est recommandée pour une meilleure expérience',
+                style: TextStyle(fontFamily: 'Sen'),
+              ),
+              duration: Duration(seconds: 3),
+              backgroundColor: Color(0xFF8773F8),
+            ),
+          );
+
+          // Attendre que le SnackBar s'affiche avant de naviguer
+          await Future.delayed(const Duration(seconds: 1));
+
+          if (!mounted) return;
+
+          // Naviguer vers AuthScreen même si la permission est refusée
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AuthScreen()),
+          );
+        }
+      } catch (e) {
+        // Gestion des erreurs
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Une erreur est survenue: $e',
+              style: const TextStyle(fontFamily: 'Sen'),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+
+        // En cas d'erreur, on navigue quand même vers AuthScreen
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isFirstTime', false);
+
+        if (!mounted) return;
+
+        await Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => AuthScreen()),
-        );
-      } else {
-        // Afficher un message si la permission est refusée
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'La localisation est recommandée pour une meilleure expérience'),
-          ),
         );
       }
     }

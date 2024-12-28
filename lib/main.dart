@@ -106,16 +106,36 @@ void main() async {
     print('Firebase initialization error: $e');
   }
 
+  // Update background notification handler
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print('A new onMessageOpenedApp event was published!');
+
+    final BuildContext? context = navigatorKey.currentContext;
+    if (context != null) {
+      NotificationNavigationService.handleNotificationTap(
+          context, message.data);
+    }
+  });
+
+  // Update terminated state notification handler
+  FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
+    if (message != null) {
+      final BuildContext? context = navigatorKey.currentContext;
+      if (context != null) {
+        NotificationNavigationService.handleNotificationTap(
+            context, message.data);
+      }
+    }
+  });
+
   runApp(MyApp(navigatorKey: navigatorKey));
 }
 
+// Update the _handleNotificationNavigation function
 void _handleNotificationNavigation(RemoteMessage message) {
-  // Utiliser la clé de navigation globale
   final BuildContext? context = navigatorKey.currentContext;
-
-  if (context != null && message.data['type'] == 'blog_post') {
-    NotificationNavigationService.navigateToBlogPostDetail(
-        context, message.data);
+  if (context != null) {
+    NotificationNavigationService.handleNotificationTap(context, message.data);
   }
 }
 
@@ -164,6 +184,8 @@ class EntryPoint extends StatefulWidget {
 }
 
 class _EntryPointState extends State<EntryPoint> {
+  // Ajout d'un flag pour suivre si l'initialisation est terminée
+  bool _initialized = false;
   bool _isFirstTime = true;
   User? _currentUser;
 
@@ -175,17 +197,31 @@ class _EntryPointState extends State<EntryPoint> {
 
   Future<void> _checkOnboardingAndAuthStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? isFirstTime = prefs.getBool('isFirstTime') ?? true;
+    bool isFirstTime = prefs.getBool('isFirstTime') ?? true;
     User? currentUser = FirebaseAuth.instance.currentUser;
 
+    // Ne mettre à jour l'état qu'une fois que toutes les vérifications sont terminées
     setState(() {
       _isFirstTime = isFirstTime;
       _currentUser = currentUser;
+      _initialized = true;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Afficher un écran de chargement pendant l'initialisation
+    if (!_initialized) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Une fois initialisé, retourner l'écran approprié
     if (_isFirstTime) {
       return const OnboardingScreen();
     } else if (_currentUser == null) {
