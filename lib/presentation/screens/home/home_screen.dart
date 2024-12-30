@@ -11,6 +11,7 @@ import 'package:event_app/presentation/screens/home/widgets/app_bar_styles.dart'
 import 'package:event_app/presentation/screens/home/widgets/commune_card.dart';
 import 'package:event_app/presentation/screens/home/widgets/location_card.dart';
 import 'package:event_app/presentation/screens/home/widgets/shimmer_loading.dart';
+import 'package:event_app/presentation/screens/profile/event_space_add/user_event_space_management.dart';
 import 'package:event_app/presentation/screens/profile/profile_screen.dart';
 import 'package:event_app/presentation/screens/search/search.dart';
 import 'package:flutter/cupertino.dart';
@@ -44,11 +45,20 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey _suggestionsKey = GlobalKey();
   final GlobalKey _nearbyKey = GlobalKey();
 
+  bool _showBanner = true;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _checkLocationStatus();
+
+    // Charger la préférence de la bannière
+    SharedPreferences.getInstance().then((prefs) {
+      setState(() {
+        _showBanner = prefs.getBool('showPromotionalBanner') ?? true;
+      });
+    });
   }
 
   @override
@@ -108,6 +118,216 @@ class _HomeScreenState extends State<HomeScreen> {
         _selectedSection = newSelectedSection;
       });
     }
+  }
+
+  Future<void> _handleBannerClose() async {
+    final bool? result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Masquer la bannière',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Vous pourrez retrouver cette section dans les paramètres de l\'application.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text(
+                            'Annuler',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            'Masquer',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result ?? false) {
+      try {
+        // Obtenir l'instance de SharedPreferences
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+        // Sauvegarder la préférence de l'utilisateur
+        await prefs.setBool('showPromotionalBanner', false);
+
+        // Mettre à jour l'état local
+        setState(() {
+          _showBanner = false;
+        });
+
+        // Afficher un message de confirmation (optionnel)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Préférence sauvegardée'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        // Gérer les erreurs potentielles
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Erreur lors de la sauvegarde de la préférence'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Widget _buildPromotionalBanner() {
+    if (!_showBanner) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFC3B9FB), Color(0xFF9747FF)],
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Stack(
+        children: [
+          // Contenu principal de la bannière
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 48,
+                16), // Ajusté pour laisser de l'espace pour le bouton de fermeture
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Vous avez un espace événementiel ?',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    const EventSpaceManagementScreen()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Color(0xFF9747FF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Ajouter mon espace'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Bouton de fermeture amélioré
+          Positioned(
+            right: 4,
+            top: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: IconButton(
+                constraints: const BoxConstraints(
+                  minWidth: 32,
+                  minHeight: 32,
+                ),
+                padding: const EdgeInsets.all(4),
+                icon: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: _handleBannerClose,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _checkLocationStatus() async {
@@ -588,7 +808,7 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case GlobalKey key when key == _nearbyKey:
         _scrollController.animateTo(
-          1980, // Ajustez cette valeur en fonction de la mise en page
+          2050, // Ajustez cette valeur en fonction de la mise en page
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
@@ -619,6 +839,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 10),
+              // Ajout de la bannière promotionnelle
+              _buildPromotionalBanner(),
               const SizedBox(height: 16),
 
               // Communes Section

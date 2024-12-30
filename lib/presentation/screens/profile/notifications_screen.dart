@@ -578,7 +578,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         const Padding(
                           padding: EdgeInsets.only(top: 20),
                           child: Text(
-                            'Aucune notification à afficher',
+                            'Aucune notification pour le moment',
                             style: TextStyle(
                               color: Colors.grey,
                               fontSize: 16,

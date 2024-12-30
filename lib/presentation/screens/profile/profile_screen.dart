@@ -1,4 +1,6 @@
 import 'package:event_app/presentation/screens/auth/auth_screen.dart';
+import 'package:event_app/presentation/screens/profile/event_space_add/user_add_event_space_screen.dart';
+import 'package:event_app/presentation/screens/profile/event_space_add/user_event_space_management.dart';
 import 'package:event_app/presentation/screens/profile/favorites_screen.dart';
 import 'package:event_app/presentation/screens/profile/notifications_screen.dart';
 import 'package:event_app/presentation/screens/profile/personal_info_screen.dart';
@@ -22,6 +24,11 @@ class _ProfileStyles {
   static const double spaceBetweenButtonAndTitle = 8.0;
   static const double borderRadius = 20.0;
   static const double scrollThreshold = 80.0;
+  static const double bannerVerticalPadding = 16.0;
+  static const double bannerHorizontalPadding = 16.0;
+  static const double bannerBorderRadius = 12.0;
+  static const double bannerButtonRadius = 8.0;
+  static const double bannerTextSpacing = 8.0;
 }
 
 class ProfileScreen extends StatefulWidget {
@@ -108,6 +115,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Guide l'utilisateur vers les paramètres de l'application
       await openAppSettings();
     }
+  }
+
+  Widget _buildEventSpaceBanner() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFC3B9FB), Color(0xFF9747FF)],
+        ),
+        borderRadius: BorderRadius.circular(_ProfileStyles.bannerBorderRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: _ProfileStyles.bannerHorizontalPadding,
+          vertical: _ProfileStyles.bannerVerticalPadding,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Vous avez un espace événementiel ?',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: _ProfileStyles.bannerTextSpacing),
+            ElevatedButton(
+              onPressed: () {
+                // TODO: Implement navigation to event space creation screen
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF9747FF),
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.circular(_ProfileStyles.bannerButtonRadius),
+                ),
+              ),
+              child: const Text('Ajouter mon espace'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildCircularButton({
@@ -319,34 +374,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
     bool showArrow = true,
     Color? textColor,
+    bool useGradient = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: useGradient
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFC3B9FB), Color(0xFF9747FF)],
+              )
+            : null,
+        color: useGradient ? null : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
+        border: useGradient ? null : Border.all(color: Colors.grey[300]!),
       ),
       child: ListTile(
         onTap: onTap,
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color:
+                useGradient ? Colors.white.withOpacity(0.2) : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
           ),
-          child: icon,
+          child: Icon(
+            icon.icon,
+            color: useGradient ? Colors.white : icon.color,
+          ),
         ),
         title: Text(
           title,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: textColor ?? Colors.black,
+            color: useGradient ? Colors.white : (textColor ?? Colors.black),
           ),
         ),
-        trailing:
-            showArrow ? const Icon(Icons.arrow_forward_ios, size: 16) : null,
+        trailing: showArrow
+            ? Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: useGradient ? Colors.white : Colors.black,
+              )
+            : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
@@ -384,7 +456,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 26),
+              _buildMenuItem(
+                icon: const Icon(Icons.business),
+                title: 'Ajouter un espace événementiel',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const EventSpaceManagementScreen()),
+                  );
+                },
+                useGradient: true,
+              ),
               _buildMenuItem(
                 icon: Icon(CupertinoIcons.person, color: Colors.orange[400]),
                 title: 'Informations personnelles',
@@ -431,10 +516,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _buildMenuItem(
                 icon: Icon(
-                    _isLocationEnabled ? Icons.location_on : Icons.location_off,
-                    color: _isLocationEnabled
-                        ? Colors.green[400]
-                        : Colors.grey[400]),
+                  _isLocationEnabled ? Icons.location_on : Icons.location_off,
+                  color:
+                      _isLocationEnabled ? Colors.green[400] : Colors.grey[400],
+                ),
                 title: _isLocationEnabled
                     ? 'Localisation activée'
                     : 'Activer la localisation',

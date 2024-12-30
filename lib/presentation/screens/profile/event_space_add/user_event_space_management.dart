@@ -1,8 +1,8 @@
+import 'package:event_app/presentation/screens/profile/event_space_add/user_add_event_space_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class _PersonalInfoStyles {
+class EventSpaceManagementStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
   static const double buttonRowHeight = 52.0;
   static const double circularButtonSize = 46.0;
@@ -17,14 +17,16 @@ class _PersonalInfoStyles {
   static const double scrollThreshold = 80.0;
 }
 
-class PersonalInfoScreen extends StatefulWidget {
-  const PersonalInfoScreen({super.key});
+class EventSpaceManagementScreen extends StatefulWidget {
+  const EventSpaceManagementScreen({super.key});
 
   @override
-  State<PersonalInfoScreen> createState() => _PersonalInfoScreenState();
+  State<EventSpaceManagementScreen> createState() =>
+      _EventSpaceManagementScreenState();
 }
 
-class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
+class _EventSpaceManagementScreenState
+    extends State<EventSpaceManagementScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
 
@@ -42,11 +44,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.offset > _PersonalInfoStyles.scrollThreshold &&
+    if (_scrollController.offset > EventSpaceManagementStyles.scrollThreshold &&
         !_isScrolled) {
       setState(() => _isScrolled = true);
     } else if (_scrollController.offset <=
-            _PersonalInfoStyles.scrollThreshold &&
+            EventSpaceManagementStyles.scrollThreshold &&
         _isScrolled) {
       setState(() => _isScrolled = false);
     }
@@ -57,12 +59,12 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: _PersonalInfoStyles.circularButtonSize,
-      height: _PersonalInfoStyles.circularButtonSize,
+      width: EventSpaceManagementStyles.circularButtonSize,
+      height: EventSpaceManagementStyles.circularButtonSize,
       margin: EdgeInsets.symmetric(
-          horizontal: _PersonalInfoStyles.circularButtonMargin),
+          horizontal: EventSpaceManagementStyles.circularButtonMargin),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.grey[300]!),
       ),
@@ -76,7 +78,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return PreferredSize(
-      preferredSize: Size.fromHeight(_PersonalInfoStyles.appBarTotalHeight),
+      preferredSize:
+          Size.fromHeight(EventSpaceManagementStyles.appBarTotalHeight),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
@@ -94,22 +97,23 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         child: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          toolbarHeight: _PersonalInfoStyles.appBarTotalHeight,
+          toolbarHeight: EventSpaceManagementStyles.appBarTotalHeight,
           automaticallyImplyLeading: false,
           flexibleSpace: Column(
             children: [
               Container(
                 width: double.infinity,
-                height: _PersonalInfoStyles.bannerHeight,
+                height: EventSpaceManagementStyles.bannerHeight,
               ),
               SafeArea(
                 child: Column(
                   children: [
                     SizedBox(
-                      height: _PersonalInfoStyles.buttonRowHeight,
+                      height: EventSpaceManagementStyles.buttonRowHeight,
                       child: Padding(
                         padding: EdgeInsets.symmetric(
-                            horizontal: _PersonalInfoStyles.horizontalPadding),
+                            horizontal:
+                                EventSpaceManagementStyles.horizontalPadding),
                         child: Row(
                           children: [
                             _buildCircularButton(
@@ -122,21 +126,23 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       ),
                     ),
                     SizedBox(
-                        height: _PersonalInfoStyles.spaceBetweenButtonAndTitle),
+                        height: EventSpaceManagementStyles
+                            .spaceBetweenButtonAndTitle),
                     Container(
                       width: double.infinity,
-                      height: _PersonalInfoStyles.titleContainerHeight,
+                      height: EventSpaceManagementStyles.titleContainerHeight,
                       margin: EdgeInsets.symmetric(
-                          horizontal: _PersonalInfoStyles.horizontalPadding),
-                      padding: _PersonalInfoStyles.titlePadding,
+                          horizontal:
+                              EventSpaceManagementStyles.horizontalPadding),
+                      padding: EventSpaceManagementStyles.titlePadding,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(
-                            _PersonalInfoStyles.borderRadius),
+                            EventSpaceManagementStyles.borderRadius),
                         border: Border.all(color: Colors.grey[300]!),
                       ),
                       child: const Text(
-                        'Personal Info',
+                        'Gestion des Espaces',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 16,
@@ -154,50 +160,57 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     );
   }
 
-  Widget _buildInfoItem({
+  Widget _buildMenuItem({
     required Icon icon,
-    required String label,
-    required String value,
+    required String title,
+    required VoidCallback onTap,
+    bool showArrow = true,
+    Color? textColor,
+    bool useGradient = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: useGradient
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFC3B9FB), Color(0xFF9747FF)],
+              )
+            : null,
+        color: useGradient ? null : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!),
+        border: useGradient ? null : Border.all(color: Colors.grey[300]!),
       ),
       child: ListTile(
+        onTap: onTap,
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color:
+                useGradient ? Colors.white.withOpacity(0.2) : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
           ),
-          child: icon,
+          child: Icon(
+            icon.icon,
+            color: useGradient ? Colors.white : icon.color,
+          ),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
-                letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: Colors.black,
-              ),
-            ),
-          ],
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: useGradient ? Colors.white : (textColor ?? Colors.black),
+          ),
         ),
+        trailing: showArrow
+            ? Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: useGradient ? Colors.white : Colors.black,
+              )
+            : null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
@@ -205,8 +218,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       backgroundColor: Colors.white,
       extendBodyBehindAppBar: true,
@@ -215,31 +226,49 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         controller: _scrollController,
         child: Padding(
           padding: EdgeInsets.only(
-            top: _PersonalInfoStyles.appBarTotalHeight + 20,
+            top: EventSpaceManagementStyles.appBarTotalHeight + 20,
             left: 20,
             right: 20,
             bottom: 20,
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 26),
-              Center(
-                child: Text(
-                  user?.displayName ?? user?.email?.split('@')[0] ?? 'User',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
               const SizedBox(height: 32),
-              _buildInfoItem(
-                icon: Icon(CupertinoIcons.mail, color: Colors.blue[400]),
-                label: 'EMAIL',
-                value: user?.email ?? 'hello@halalab.co',
+              _buildMenuItem(
+                icon: const Icon(Icons.add_business_rounded,
+                    color: Color(0xFF9747FF)),
+                title: 'Créer un nouvel espace',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddEventSpaceScreen(),
+                    ),
+                  );
+                },
+                useGradient: true,
               ),
-              // Vous pouvez ajouter d'autres informations ici en utilisant _buildInfoItem
+              _buildMenuItem(
+                icon: Icon(CupertinoIcons.doc_text, color: Colors.blue[400]),
+                title: 'Mes demandes en cours',
+                onTap: () {
+                  // TODO: Navigate to pending requests screen
+                },
+              ),
+              _buildMenuItem(
+                icon: Icon(CupertinoIcons.time, color: Colors.orange[400]),
+                title: 'Historique des demandes',
+                onTap: () {
+                  // TODO: Navigate to requests history screen
+                },
+              ),
+              _buildMenuItem(
+                icon: Icon(Icons.business, color: Colors.green[400]),
+                title: 'Mes espaces approuvés',
+                onTap: () {
+                  // TODO: Navigate to approved spaces screen
+                },
+              ),
             ],
           ),
         ),
