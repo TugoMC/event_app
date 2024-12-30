@@ -26,7 +26,7 @@ class EventSpace {
   final String createdBy;
   final int version;
 
-  static const int maxDescriptionLength = 1000;
+  static const int maxDescriptionLength = 1500;
   static const int minDescriptionLength = 50;
 
   EventSpace({

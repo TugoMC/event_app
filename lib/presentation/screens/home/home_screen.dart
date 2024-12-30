@@ -246,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPromotionalBanner() {
     if (!_showBanner) return const SizedBox.shrink();
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,

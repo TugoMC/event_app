@@ -237,7 +237,7 @@ class _EventSpaceManagementScreenState
               _buildMenuItem(
                 icon: const Icon(Icons.add_business_rounded,
                     color: Color(0xFF9747FF)),
-                title: 'Créer un nouvel espace',
+                title: 'Ajouter un espace',
                 onTap: () {
                   Navigator.push(
                     context,

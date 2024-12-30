@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 class AddEventSpaceStyles {
   static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
@@ -309,17 +310,30 @@ class _AddEventSpaceScreenState extends State<AddEventSpaceScreen> {
               },
             ),
           ),
-        ElevatedButton.icon(
-          onPressed: _pickImage,
-          icon: const Icon(Icons.add_photo_alternate),
-          label: const Text('Ajouter une photo'),
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: ElevatedButton.icon(
+            onPressed: _pickImage,
+            icon: const Icon(Icons.add_photo_alternate, color: Colors.white),
+            label: const Text(
+              'Ajouter une photo',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF9747FF),
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(AddEventSpaceStyles.borderRadius),
+              ),
+              elevation: 0,
+            ),
           ),
-        ),
+        )
       ],
     );
   }
@@ -361,12 +375,16 @@ class _AddEventSpaceScreenState extends State<AddEventSpaceScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _descriptionController,
-                    maxLines: 3,
+                    minLines: 1,
+                    maxLines: null,
                     decoration:
                         AddEventSpaceStyles.inputDecoration('Description')
                             .copyWith(
-                                prefixIcon: const Icon(Icons.description)),
+                      prefixIcon: const Icon(Icons.description),
+                    ),
                   ),
+                  const SizedBox(height: 16),
+                  const ExampleSection(),
                 ],
               ),
             ),
@@ -443,14 +461,24 @@ class _AddEventSpaceScreenState extends State<AddEventSpaceScreen> {
                   TextFormField(
                     controller: _phoneController,
                     decoration: AddEventSpaceStyles.inputDecoration('Téléphone')
-                        .copyWith(prefixIcon: const Icon(Icons.phone)),
+                        .copyWith(prefixIcon: const Icon(Icons.phone))
+                        .copyWith(
+                          hintText: '+225 XX XX XX XX XX',
+                        ),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _priceController,
                     decoration:
                         AddEventSpaceStyles.inputDecoration('Prix').copyWith(
-                      prefixIcon: const Icon(Icons.euro),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text(
+                          '₣',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                       suffixText: 'FCFA',
                     ),
                     keyboardType: TextInputType.number,
@@ -490,6 +518,122 @@ class _AddEventSpaceScreenState extends State<AddEventSpaceScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ExampleSection extends StatefulWidget {
+  const ExampleSection({Key? key}) : super(key: key);
+
+  @override
+  State<ExampleSection> createState() => _ExampleSectionState();
+}
+
+class _ExampleSectionState extends State<ExampleSection> {
+  bool _isExpanded = false;
+
+  static const String exampleText = '''Nom de l'espace : Le Jardin des Rêves
+Description : Situé en plein cœur d'Abidjan, Le Jardin des Rêves est un espace événementiel unique, conçu pour transformer vos moments spéciaux en souvenirs inoubliables. Avec une capacité d'accueil de 300 personnes, cet espace offre une combinaison parfaite entre modernité et nature.
+✨ Caractéristiques principales :
+* Cadre enchanteur : Un jardin verdoyant et aménagé, idéal pour les mariages, réceptions, et soirées en plein air.
+* Équipements modernes : Salle climatisée avec système audio haut de gamme, éclairage LED personnalisable, et Wi-Fi gratuit.
+* Espaces polyvalents : Une salle principale modulable, une terrasse extérieure et un espace lounge.
+📍 Localisation : Situé à Cocody Riviera, à 10 minutes du centre-ville et facilement accessible avec un parking privé sécurisé.
+🎉 Services inclus :
+* Organisation clé en main avec décoration personnalisée.
+* Traiteur gastronomique sur demande.
+* Service de sécurité et nettoyage.
+Tarifs : À partir de 200,000 FCFA selon les prestations choisies. Contactez-nous dès aujourd'hui pour réserver votre date et créer des moments magiques !''';
+
+  Future<void> _copyToClipboard() async {
+    await Clipboard.setData(const ClipboardData(text: exampleText));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Exemple copié dans le presse-papiers'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(AddEventSpaceStyles.borderRadius),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Titre avec flex pour prendre l'espace disponible
+                Expanded(
+                  child: const Text(
+                    'Exemple',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                // Boutons avec taille minimale
+                IconButton(
+                  onPressed: _copyToClipboard,
+                  icon: const Icon(Icons.copy, size: 20),
+                  tooltip: 'Copier',
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _isExpanded = !_isExpanded;
+                    });
+                  },
+                  icon: Icon(
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    size: 20,
+                  ),
+                  tooltip: _isExpanded ? 'Voir moins' : 'Voir plus',
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AnimatedCrossFade(
+            firstChild: const SizedBox.shrink(),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: SelectableText(
+                exampleText,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[800],
+                  height: 1.5,
+                ),
+              ),
+            ),
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 300),
+          ),
+        ],
       ),
     );
   }
