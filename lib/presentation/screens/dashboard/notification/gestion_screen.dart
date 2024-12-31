@@ -224,37 +224,6 @@ class _NotificationsManagementScreenState
               ),
               const SizedBox(height: 32),
               _buildMenuItem(
-                icon: Icon(CupertinoIcons.plus_circle_fill,
-                    color: Colors.green[400]),
-                title: 'Créer une notification',
-                onTap: () {
-                  // Navigation vers la création de notification
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.list_bullet, color: Colors.blue[400]),
-                title: 'Toutes les notifications',
-                onTap: () {
-                  // Navigation vers la liste des notifications
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.pencil_circle_fill,
-                    color: Colors.orange[400]),
-                title: 'Modifier une notification',
-                onTap: () {
-                  // Navigation vers la modification des notifications
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.trash_circle_fill,
-                    color: Colors.red[400]),
-                title: 'Supprimer une notification',
-                onTap: () {
-                  // Navigation vers la suppression des notifications
-                },
-              ),
-              _buildMenuItem(
                 icon: Icon(CupertinoIcons.doc_text_fill,
                     color: Colors.purple[400]),
                 title: 'Gérer les Articles de Blog',

@@ -246,7 +246,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildPromotionalBanner() {
     if (!_showBanner) return const SizedBox.shrink();
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
@@ -716,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                       _buildCircularButton(
-                        icon: const Icon(CupertinoIcons.person,
+                        icon: const Icon(CupertinoIcons.gear,
                             color: Colors.black),
                         onPressed: () {
                           Navigator.push(
@@ -839,7 +838,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
               // Ajout de la bannière promotionnelle
               _buildPromotionalBanner(),
               const SizedBox(height: 16),

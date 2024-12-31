@@ -16,6 +16,7 @@ class DetailsHeader extends StatefulWidget {
 class _DetailsHeaderState extends State<DetailsHeader> {
   BlogPost? _associatedBlogPost;
   double? _currentPrice;
+  bool _isDescriptionExpanded = false;
 
   @override
   void initState() {
@@ -63,6 +64,92 @@ class _DetailsHeaderState extends State<DetailsHeader> {
 
     final ratings = querySnapshot.docs.map((doc) => doc['rating'] as int);
     return ratings.reduce((a, b) => a + b) / ratings.length;
+  }
+
+  Widget _buildExpandableDescription() {
+    const int maxCharacters = 1500;
+    const int initialDisplayCharacters = 100;
+    final String description = widget.eventSpace.description;
+    final bool isLongDescription =
+        description.length > initialDisplayCharacters;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: AnimatedCrossFade(
+                duration: const Duration(milliseconds: 300),
+                crossFadeState: _isDescriptionExpanded
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                firstChild: Text(
+                  isLongDescription
+                      ? '${description.substring(0, initialDisplayCharacters)}...'
+                      : description,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                    height: 1.6,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                secondChild: Text(
+                  description.length > maxCharacters
+                      ? '${description.substring(0, maxCharacters)}...'
+                      : description,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                    height: 1.6,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+            ),
+            if (isLongDescription)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isDescriptionExpanded = !_isDescriptionExpanded;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF8773F8).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _isDescriptionExpanded
+                          ? CupertinoIcons.chevron_up
+                          : CupertinoIcons.chevron_down,
+                      size: 16,
+                      color: const Color(0xFF8773F8),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (description.length > maxCharacters && _isDescriptionExpanded)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Texte tronqué à ${maxCharacters} caractères',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 
   Widget _buildResponsiveContainer({
@@ -233,15 +320,7 @@ class _DetailsHeaderState extends State<DetailsHeader> {
               const SizedBox(height: 24),
 
               // Description
-              Text(
-                widget.eventSpace.description,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey[700],
-                  height: 1.6,
-                  letterSpacing: 0.3,
-                ),
-              ),
+              _buildExpandableDescription(),
 
               const SizedBox(height: 24),
 

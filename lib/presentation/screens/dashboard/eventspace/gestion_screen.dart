@@ -2,6 +2,7 @@ import 'package:event_app/presentation/screens/dashboard/eventspace/add_event_sp
 import 'package:event_app/presentation/screens/dashboard/eventspace/delete_event_spaces_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/eventspace/list_event_spaces_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/eventspace/recommendations_management_screen.dart';
+import 'package:event_app/presentation/screens/dashboard/eventspace/user_event_space_management_for_admin/admin_user_event_space_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -272,6 +273,18 @@ class _EventSpacesScreenState extends State<EventSpacesScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => RecommendationsManagementScreen(),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuItem(
+                icon: Icon(CupertinoIcons.building_2_fill, color: Colors.black),
+                title: 'Gestion des demandes',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminEventSpaceManagementScreen(),
                     ),
                   );
                 },

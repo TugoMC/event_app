@@ -3,7 +3,7 @@ import 'package:event_app/presentation/screens/dashboard/avis/gestion_screen.dar
 import 'package:event_app/presentation/screens/dashboard/city/gestion_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/commune/gestion_screen.dart';
 import 'package:event_app/presentation/screens/dashboard/eventspace/gestion_screen.dart';
-import 'package:event_app/presentation/screens/dashboard/favoris/gestion_screen.dart';
+
 import 'package:event_app/presentation/screens/dashboard/notification/gestion_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -283,18 +283,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     MaterialPageRoute(
                         builder: (context) =>
                             const NotificationsManagementScreen()),
-                  );
-                },
-              ),
-              _buildMenuItem(
-                icon: Icon(CupertinoIcons.heart_fill, color: Colors.pink[400]),
-                title: 'Gestion des favoris',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) =>
-                            const FavoritesManagementScreen()),
                   );
                 },
               ),

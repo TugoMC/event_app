@@ -1,9 +1,28 @@
 import 'package:event_app/data/models/blog_post.dart';
+import 'package:event_app/data/models/event_space.dart';
+import 'package:event_app/presentation/screens/profile/notif_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'blog_post_detail_screen.dart';
 import 'blog_post_edit_screen.dart';
+
+class BlogStyles {
+  static const double appBarTotalHeight = 52.0 + kToolbarHeight + 44.0;
+  static const double buttonRowHeight = 52.0;
+  static const double circularButtonSize = 46.0;
+  static const double bannerHeight = 44.0;
+  static const double circularButtonMargin = 5.0;
+  static const double horizontalPadding = 24.0;
+  static const double titleContainerHeight = 46.0;
+  static const EdgeInsets titlePadding =
+      EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0);
+  static const double spaceBetweenButtonAndTitle = 8.0;
+  static const double borderRadius = 20.0;
+  static const double scrollThreshold = 80.0;
+}
 
 class BlogPostListScreen extends StatefulWidget {
   const BlogPostListScreen({Key? key}) : super(key: key);
@@ -14,23 +33,124 @@ class BlogPostListScreen extends StatefulWidget {
 
 class _BlogPostListScreenState extends State<BlogPostListScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ScrollController _scrollController = ScrollController();
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  // Filtrage et recherche
+  bool _isScrolled = false;
   String _searchQuery = '';
   List<String> _selectedTags = [];
   bool _sortDescending = true;
+  bool _isAdmin = false;
 
-  // Liste complète des articles
   List<BlogPost> _allBlogPosts = [];
   List<BlogPost> _filteredBlogPosts = [];
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _fetchBlogPosts();
-    _initializeNotifications();
+    _checkAdminStatus();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.offset > BlogStyles.scrollThreshold && !_isScrolled) {
+      setState(() => _isScrolled = true);
+    } else if (_scrollController.offset <= BlogStyles.scrollThreshold &&
+        _isScrolled) {
+      setState(() => _isScrolled = false);
+    }
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _isAdmin = user.email == 'ouattarajunior418@gmail.com';
+      });
+    }
+  }
+
+  Future<void> _sendNotification(BlogPost post) async {
+    try {
+      final eventSpace =
+          await EventSpace.fetchEventSpaceDetails(post.eventSpaceId);
+
+      String truncatedDescription = post.description.length > 50
+          ? '${post.description.substring(0, 50)}...'
+          : post.description;
+
+      await PushNotificationService.sendPushNotification(
+        context: context,
+        title: '${post.title} - ${eventSpace.name}',
+        body: truncatedDescription,
+        data: {
+          'blogPostId': post.id,
+          'type': 'blog_post',
+          'eventSpaceId': post.eventSpaceId,
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Erreur lors de l\'envoi de la notification : $e')),
+      );
+    }
+  }
+
+  bool _isOfferExpired(BlogPost post) {
+    final now = DateTime.now();
+
+    if (post.promotionalPrice != null) {
+      if (!post.promotionalPrice!.isCurrentlyActive()) {
+        return true;
+      }
+    }
+
+    if (post.validUntil != null) {
+      return now.isAfter(post.validUntil!);
+    }
+
+    return false;
+  }
+
+  Widget _buildExpirationBanner(BlogPost post) {
+    if (_isOfferExpired(post)) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        margin: const EdgeInsets.only(top: 8),
+        decoration: BoxDecoration(
+          color: Colors.red[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.red[200]!),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.warning_outlined, color: Colors.red[700], size: 16),
+            const SizedBox(width: 8),
+            Text(
+              'Offre expirée',
+              style: TextStyle(
+                color: Colors.red[700],
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   Future<void> _initializeNotifications() async {
@@ -151,143 +271,308 @@ class _BlogPostListScreenState extends State<BlogPostListScreen> {
     }).toList();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Articles de blog'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
+  Widget _buildBlogPostCard(BlogPost post) {
+    bool isExpired = _isOfferExpired(post);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            title: Text(
+              post.title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                Text(
+                  post.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: post.tags
+                      .map((tag) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: _getTagColor(tag).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              tag.name,
+                              style: TextStyle(
+                                color: _getTagColor(tag),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isAdmin && !isExpired)
+                  IconButton(
+                    icon:
+                        Icon(CupertinoIcons.bell_fill, color: Colors.blue[400]),
+                    onPressed: () => _sendNotification(post),
+                  ),
+                PopupMenuButton<String>(
+                  icon: const Icon(CupertinoIcons.ellipsis_vertical),
+                  onSelected: (String value) {
+                    switch (value) {
+                      case 'edit':
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                BlogPostEditScreen(post: post),
+                          ),
+                        );
+                        break;
+                      case 'delete':
+                        _deletePost(post.id);
+                        break;
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(CupertinoIcons.pencil,
+                              color: Colors.blue[400], size: 18),
+                          const SizedBox(width: 12),
+                          const Text('Modifier'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          const Icon(CupertinoIcons.delete,
+                              color: Colors.red, size: 18),
+                          const SizedBox(width: 12),
+                          const Text('Supprimer',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const BlogPostEditScreen(),
+                  builder: (context) => BlogPostDetailScreen(post: post),
                 ),
               );
             },
           ),
+          if (isExpired) _buildExpirationBanner(post),
         ],
       ),
-      body: Column(
-        children: [
-          // ... (autres widgets inchangés)
+    );
+  }
 
-          Expanded(
-            child: _filteredBlogPosts.isEmpty
-                ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.description_outlined,
-                            size: 80, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text(
-                          'Aucun article trouvé',
-                          style: TextStyle(color: Colors.grey, fontSize: 18),
-                        ),
-                      ],
-                    ),
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    return PreferredSize(
+      preferredSize: Size.fromHeight(BlogStyles.appBarTotalHeight),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: _isScrolled
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    offset: const Offset(0, 2),
+                    blurRadius: 4,
                   )
-                : ListView.builder(
-                    itemCount: _filteredBlogPosts.length,
-                    itemBuilder: (context, index) {
-                      BlogPost post = _filteredBlogPosts[index];
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        child: ListTile(
-                          title: Text(
-                            post.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                post.description,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Wrap(
-                                spacing: 4,
-                                children: post.tags
-                                    .map((tag) => Chip(
-                                          label: Text(tag.name),
-                                          backgroundColor: _getTagColor(tag),
-                                          labelStyle:
-                                              const TextStyle(fontSize: 10),
-                                        ))
-                                    .toList(),
-                              ),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    BlogPostDetailScreen(post: post),
-                              ),
-                            );
-                          },
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Bouton de notification
-                              IconButton(
-                                icon: const Icon(Icons.notifications_active,
-                                    color: Colors.blue),
-                                onPressed: () => _sendLocalNotification(post),
-                              ),
-                              // Menu d'options existant
-                              PopupMenuButton<String>(
-                                onSelected: (String value) {
-                                  switch (value) {
-                                    case 'edit':
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              BlogPostEditScreen(post: post),
-                                        ),
-                                      );
-                                      break;
-                                    case 'delete':
-                                      _deletePost(post.id);
-                                      break;
-                                  }
+                ]
+              : null,
+        ),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          toolbarHeight: BlogStyles.appBarTotalHeight,
+          automaticallyImplyLeading: false,
+          flexibleSpace: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                height: BlogStyles.bannerHeight,
+              ),
+              SafeArea(
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: BlogStyles.buttonRowHeight,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: BlogStyles.horizontalPadding),
+                        child: Row(
+                          children: [
+                            _buildCircularButton(
+                              icon: const Icon(CupertinoIcons.back,
+                                  color: Colors.black),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const Spacer(),
+                            if (_isAdmin)
+                              _buildCircularButton(
+                                icon: const Icon(CupertinoIcons.add,
+                                    color: Colors.black),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const BlogPostEditScreen(),
+                                    ),
+                                  );
                                 },
-                                itemBuilder: (BuildContext context) => [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: ListTile(
-                                      leading: Icon(Icons.edit),
-                                      title: Text('Modifier'),
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: ListTile(
-                                      leading:
-                                          Icon(Icons.delete, color: Colors.red),
-                                      title: Text('Supprimer',
-                                          style: TextStyle(color: Colors.red)),
-                                    ),
-                                  ),
-                                ],
                               ),
-                            ],
-                          ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                    SizedBox(height: BlogStyles.spaceBetweenButtonAndTitle),
+                    Container(
+                      width: double.infinity,
+                      height: BlogStyles.titleContainerHeight,
+                      margin: EdgeInsets.symmetric(
+                          horizontal: BlogStyles.horizontalPadding),
+                      padding: BlogStyles.titlePadding,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.circular(BlogStyles.borderRadius),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: const Text(
+                        'Articles de blog',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCircularButton({
+    required Widget icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: BlogStyles.circularButtonSize,
+      height: BlogStyles.circularButtonSize,
+      margin: EdgeInsets.symmetric(horizontal: BlogStyles.circularButtonMargin),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: IconButton(
+        icon: icon,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      extendBodyBehindAppBar: true,
+      appBar: _buildAppBar(context),
+      body: SingleChildScrollView(
+        controller: _scrollController,
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: BlogStyles.appBarTotalHeight + 20,
+            left: 20,
+            right: 20,
+            bottom: 20,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Center(
+                child: Text(
+                  'Articles de blog',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 1),
+              if (_filteredBlogPosts.isEmpty)
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(CupertinoIcons.doc_text,
+                          size: 80, color: Colors.grey[400]),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Aucun article trouvé',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 18,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _filteredBlogPosts.length,
+                  itemBuilder: (context, index) {
+                    return _buildBlogPostCard(_filteredBlogPosts[index]);
+                  },
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
